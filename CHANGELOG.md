@@ -7,3 +7,4 @@
 - **[2026-11-08]** style: define OLED dark mode tokens and background colors
 - **[2026-11-08]** style: import and configure Google Font Unbounded with Cyrillic subset
 - **[2026-11-08]** feat(viewport): add viewport-fit cover and mobile optimization meta tags
+- **[2026-11-08]** feat(api): build client-side mock storage helpers for browser development
