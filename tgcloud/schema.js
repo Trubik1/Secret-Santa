@@ -9,6 +9,8 @@ export const users = table('users', {
   photoUrl: text('photo_url'),
   eventTitle: text('event_title').default(''),
   eventDate: text('event_date'), // YYYY-MM-DD
+  isPremium: boolean('is_premium').default(false),
+  coverUrl: text('cover_url'),
   createdAt: text('created_at').default(sql`(datetime('now'))`),
 })
 
