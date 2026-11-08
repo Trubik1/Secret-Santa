@@ -153,16 +153,16 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn select-none"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-surface-card dark:bg-[#17171a] border-t sm:border border-border-soft dark:border-[#34252f] rounded-t-3xl sm:rounded-3xl p-5 max-h-[92vh] overflow-y-auto shadow-2xl animate-slide-up"
+        className="w-full max-w-md bg-[#161618] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl p-5 max-h-[92vh] overflow-y-auto shadow-2xl animate-apple-spring"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header */}
-        <div className="flex items-center justify-between pb-3">
-          <h2 className="text-base font-black text-ink-light dark:text-white">
+        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+          <h2 className="text-base font-black text-white">
             {initialGift ? 'Редактировать желание ✨' : 'Добавить желание 🎁'}
           </h2>
           <button
@@ -170,16 +170,16 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
               onHaptic()
               onClose()
             }}
-            className="p-1.5 rounded-full text-ink-muted hover:text-ink-light dark:hover:text-white transition-colors"
+            className="p-1.5 rounded-full text-zinc-400 hover:text-white transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           {/* Smart Link Input */}
           <div>
-            <label className="block text-[11px] font-extrabold uppercase tracking-wider text-ink-muted mb-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
               Ссылка на товар (Wildberries, Ozon и др.)
             </label>
             <div className="flex gap-2">
@@ -194,14 +194,14 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
                     setParseSuccess(false)
                     setParseError(null)
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-soft dark:bg-zinc-800/80 border border-border-soft dark:border-zinc-700 text-xs text-ink-light dark:text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c4457b] transition-all"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/30 transition-all font-semibold"
                 />
               </div>
               <button
                 type="button"
                 onClick={handleParse}
                 disabled={isParsing || !url.trim()}
-                className="px-4 py-2.5 rounded-xl bg-[#c4457b] hover:bg-[#b03b6d] text-white text-xs font-bold active-press disabled:opacity-40 transition-all flex items-center gap-1.5 shrink-0"
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-black active:scale-95 disabled:opacity-40 transition-all flex items-center gap-1.5 shrink-0 shadow-md"
               >
                 {isParsing ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
                 <span>Найти</span>
@@ -210,12 +210,12 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
 
             {/* Parse Feedback Status */}
             {parseSuccess && (
-              <p className="mt-1.5 text-[11px] font-bold text-emerald-500 flex items-center gap-1">
+              <p className="mt-1.5 text-[11px] font-bold text-emerald-400 flex items-center gap-1">
                 <Check size={12} /> Данные товара успешно распознаны!
               </p>
             )}
             {parseError && (
-              <p className="mt-1.5 text-[11px] font-semibold text-amber-500 flex items-center gap-1">
+              <p className="mt-1.5 text-[11px] font-semibold text-amber-400 flex items-center gap-1">
                 <AlertCircle size={12} /> {parseError}
               </p>
             )}
@@ -223,7 +223,7 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
 
           {/* Title Field */}
           <div>
-            <label className="block text-[11px] font-extrabold uppercase tracking-wider text-ink-muted mb-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
               Название подарка *
             </label>
             <input
@@ -232,14 +232,14 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
               placeholder="Например, Наушники Sony WH-1000XM5"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-surface-soft dark:bg-zinc-800/80 border border-border-soft dark:border-zinc-700 text-xs font-semibold text-ink-light dark:text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c4457b] transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-semibold text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/30 transition-all"
             />
           </div>
 
-          {/* Price Field (Single currency, optional, locked if auto-parsed) */}
+          {/* Price Field */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[11px] font-extrabold uppercase tracking-wider text-ink-muted">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                 Цена ({currSymbol}) <span className="font-normal text-zinc-500 lowercase">(необязательно)</span>
               </label>
 
@@ -247,7 +247,7 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsPriceLocked(false)}
-                  className="inline-flex items-center gap-1 text-[10px] font-bold text-[#c4457b] hover:underline"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-zinc-300 hover:text-white hover:underline"
                 >
                   <Unlock size={11} /> Изменить цену
                 </button>
@@ -267,41 +267,41 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
                   setPrice(e.target.value)
                   setFormError(null)
                 }}
-                className={`w-full px-3.5 py-2.5 pr-10 rounded-xl text-xs font-bold text-ink-light dark:text-white placeholder:text-zinc-500 focus:outline-none transition-all ${
+                className={`w-full px-3.5 py-2.5 pr-10 rounded-xl text-xs font-bold text-white placeholder:text-zinc-500 focus:outline-none transition-all ${
                   isPriceLocked
-                    ? 'bg-zinc-200/50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-400 cursor-not-allowed'
-                    : 'bg-surface-soft dark:bg-zinc-800/80 border border-border-soft dark:border-zinc-700 focus:border-[#c4457b]'
+                    ? 'bg-zinc-900/60 border border-white/5 text-zinc-400 cursor-not-allowed'
+                    : 'bg-zinc-900 border border-white/10 focus:border-white/30'
                 }`}
               />
-              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-ink-muted">
-                {isPriceLocked ? <Lock size={13} className="text-[#c4457b]" /> : currSymbol}
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-400">
+                {isPriceLocked ? <Lock size={13} className="text-zinc-400" /> : currSymbol}
               </span>
             </div>
 
             {isPriceLocked && (
               <p className="mt-1 text-[10px] text-zinc-400 flex items-center gap-1">
-                <Lock size={10} className="text-[#c4457b]" /> Цена подтянута с маркетплейса и заблокирована от случайных изменений
+                <Lock size={10} className="text-zinc-400" /> Цена подтянута с маркетплейса
               </p>
             )}
           </div>
 
           {/* Description / Notes field */}
           <div>
-            <label className="block text-[11px] font-extrabold uppercase tracking-wider text-ink-muted mb-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
               Заметки и пожелания <span className="font-normal text-zinc-500 lowercase">(размер, цвет и т.д.)</span>
             </label>
             <textarea
               rows={2}
-              placeholder="Например: цвет только бежевый, размер M или ссылка на видеообзор"
+              placeholder="Например: цвет только бежевый, размер M"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl bg-surface-soft dark:bg-zinc-800/80 border border-border-soft dark:border-zinc-700 text-xs text-ink-light dark:text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c4457b] transition-all resize-none"
+              className="w-full px-3.5 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/30 transition-all resize-none font-medium"
             />
           </div>
 
           {/* Image URL with preview */}
           <div>
-            <label className="block text-[11px] font-extrabold uppercase tracking-wider text-ink-muted mb-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
               Прямая ссылка на фото
             </label>
             <div className="flex gap-2">
@@ -310,10 +310,10 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
                 placeholder="https://... (ссылка на картинку)"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
-                className="flex-1 px-3.5 py-2.5 rounded-xl bg-surface-soft dark:bg-zinc-800/80 border border-border-soft dark:border-zinc-700 text-xs text-ink-light dark:text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c4457b] transition-all"
+                className="flex-1 px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/30 transition-all font-medium"
               />
               {imageUrl && (
-                <div className="w-10 h-10 rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700 shrink-0">
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-zinc-800 border border-white/10 shrink-0">
                   <img src={imageUrl} alt="Превью" className="w-full h-full object-cover" />
                 </div>
               )}
@@ -322,37 +322,40 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
 
           {/* Priority selector */}
           <div>
-            <label className="block text-[11px] font-extrabold uppercase tracking-wider text-ink-muted mb-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
               Приоритет
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { val: 1, label: 'Хочу 👍', active: 'bg-emerald-950/40 border-emerald-500 text-emerald-300' },
-                { val: 2, label: 'Очень хочу 🔥', active: 'bg-amber-950/40 border-amber-500 text-amber-300' },
-                { val: 3, label: 'Мечта ✨', active: 'bg-[#241920] border-[#c4457b] text-[#d98aab]' },
-              ].map((p) => (
-                <button
-                  key={p.val}
-                  type="button"
-                  onClick={() => {
-                    onHaptic()
-                    setPriority(p.val as Priority)
-                  }}
-                  className={`py-2 px-1 rounded-xl text-xs font-bold border transition-all text-center ${
-                    priority === p.val
-                      ? `${p.active} shadow-sm font-black`
-                      : 'border-border-soft dark:border-zinc-800 text-ink-muted hover:text-ink-light dark:hover:text-white'
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
+                { val: 1, label: 'Хочу 👍' },
+                { val: 2, label: 'Очень хочу 🔥' },
+                { val: 3, label: 'Мечта ✨' },
+              ].map((p) => {
+                const isSelected = priority === p.val
+                return (
+                  <button
+                    key={p.val}
+                    type="button"
+                    onClick={() => {
+                      onHaptic()
+                      setPriority(p.val as Priority)
+                    }}
+                    className={`py-2 px-1 rounded-xl text-xs font-bold border transition-all text-center active:scale-95 ${
+                      isSelected
+                        ? 'bg-white text-black border-white shadow-sm font-black'
+                        : 'bg-zinc-900 text-zinc-400 border-white/5 hover:text-white'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           {/* Form error notification */}
           {formError && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-bold flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold flex items-center gap-2">
               <AlertCircle size={15} className="shrink-0" />
               <span>{formError}</span>
             </div>
@@ -363,7 +366,7 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || !title.trim()}
-              className="w-full py-3.5 rounded-full bg-[#c4457b] hover:bg-[#b03b6d] text-white text-xs font-black active-press shadow-lg shadow-[#c4457b]/25 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
+              className="w-full py-3.5 rounded-full bg-white hover:bg-zinc-200 text-black text-xs font-black active:scale-95 shadow-md disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
             >
               {isSubmitting ? (
                 <Loader2 size={16} className="animate-spin" />
