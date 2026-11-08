@@ -9,3 +9,4 @@
 - **[2026-11-08]** feat(viewport): add viewport-fit cover and mobile optimization meta tags
 - **[2026-11-08]** feat(api): build client-side mock storage helpers for browser development
 - **[2026-11-08]** feat(api): implement serverlessCall wrapper with TMA header authentication
+- **[2026-11-08]** feat(mock): add initial mock dataset for gifts and categories

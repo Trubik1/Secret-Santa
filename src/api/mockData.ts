@@ -6,19 +6,21 @@ export const INITIAL_MOCK_PROFILE: UserProfile = {
   lastName: '',
   username: 'artem_wishes',
   photoUrl: null,
-  eventTitle: '',
-  eventDate: null,
+  eventTitle: 'День рождения',
+  eventDate: '2026-12-01',
+  isPremium: false,
+  coverUrl: null,
 }
 
 export const INITIAL_MOCK_GIFTS: Gift[] = [
   {
     id: 'gift-1',
     userId: 10001,
-    title: 'Apple iPhone 16 Pro 256GB Desert Titanium',
+    title: 'Apple iPhone 16 Pro 256 ГБ Desert Titanium',
     price: 134990,
     currency: 'RUB',
     url: 'https://www.wildberries.ru',
-    imageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&auto=format&fit=crop&q=80',
+    imageUrl: '/products/phone.jpg',
     categoryId: 'gadgets',
     priority: 3, // Мечта
     isCrowdfund: true,
@@ -40,7 +42,7 @@ export const INITIAL_MOCK_GIFTS: Gift[] = [
     price: 33490,
     currency: 'RUB',
     url: 'https://www.ozon.ru',
-    imageUrl: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600&auto=format&fit=crop&q=80',
+    imageUrl: '/products/headphones.jpg',
     categoryId: 'gadgets',
     priority: 2, // Очень хочу
     isCrowdfund: false,
@@ -56,32 +58,32 @@ export const INITIAL_MOCK_GIFTS: Gift[] = [
   {
     id: 'gift-3',
     userId: 10001,
-    title: 'Рожковая кофеварка DeLonghi Dedica Deluxe',
-    price: 21990,
+    title: 'Кофе в зёрнах Ethiopia Sidamo, 1 кг',
+    price: 1890,
     currency: 'RUB',
     url: 'https://www.ozon.ru',
-    imageUrl: 'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=600&auto=format&fit=crop&q=80',
+    imageUrl: '/products/coffee.jpg',
     categoryId: 'home',
-    priority: 2, // Очень хочу
+    priority: 1, // Хочу
     isCrowdfund: true,
-    targetAmount: 21990,
+    targetAmount: 1890,
     createdAt: new Date().toISOString(),
     isBooked: false,
-    totalPledged: 10000,
+    totalPledged: 800,
     pledgesCount: 2,
     pledges: [
-      { id: 'p4', userName: 'Екатерина', userUsername: 'kate_s', amount: 5000 },
-      { id: 'p5', userName: 'Павел', userUsername: 'pavel_tech', amount: 5000 },
+      { id: 'p4', userName: 'Екатерина', userUsername: 'kate_s', amount: 400 },
+      { id: 'p5', userName: 'Павел', userUsername: 'pavel_tech', amount: 400 },
     ],
   },
   {
     id: 'gift-4',
     userId: 10001,
-    title: 'Книга «Принципы» Рэй Далио (подарочное издание)',
+    title: 'Книга «milk and honey» Rupi Kaur',
     price: 2450,
     currency: 'RUB',
     url: 'https://www.wildberries.ru',
-    imageUrl: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&auto=format&fit=crop&q=80',
+    imageUrl: '/products/book.jpg',
     categoryId: 'books',
     priority: 1, // Хочу
     isCrowdfund: false,
@@ -95,13 +97,13 @@ export const INITIAL_MOCK_GIFTS: Gift[] = [
   {
     id: 'gift-5',
     userId: 10001,
-    title: 'Уютное худи из плотного хлопка (графит)',
+    title: 'Вязаный кардиган oversize',
     price: 6900,
     currency: 'RUB',
     url: 'https://www.wildberries.ru',
-    imageUrl: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80',
+    imageUrl: '/products/hoodie.jpg',
     categoryId: 'clothes',
-    priority: 1, // Хочу
+    priority: 2, // Очень хочу
     isCrowdfund: false,
     targetAmount: 0,
     createdAt: new Date().toISOString(),
@@ -109,5 +111,28 @@ export const INITIAL_MOCK_GIFTS: Gift[] = [
     totalPledged: 0,
     pledgesCount: 0,
     pledges: [],
+  },
+  {
+    id: 'gift-6',
+    userId: 10001,
+    title: 'Смарт-часы Minimal Series 2',
+    price: 24990,
+    currency: 'RUB',
+    url: 'https://www.ozon.ru',
+    imageUrl: '/products/watch.jpg',
+    categoryId: 'gadgets',
+    priority: 2, // Очень хочу
+    isCrowdfund: true,
+    targetAmount: 24990,
+    createdAt: new Date().toISOString(),
+    isBooked: false,
+    totalPledged: 12500,
+    pledgesCount: 4,
+    pledges: [
+      { id: 'p6', userName: 'Михаил', userUsername: 'misha_dev', amount: 5000 },
+      { id: 'p7', userName: 'Алина', userUsername: 'alina_design', amount: 5000 },
+      { id: 'p8', userName: 'Денис', userUsername: 'denis_k', amount: 1500 },
+      { id: 'p9', userName: 'Екатерина', userUsername: 'kate_s', amount: 1000 },
+    ],
   },
 ]
