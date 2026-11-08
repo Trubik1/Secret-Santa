@@ -10,29 +10,29 @@ export default {
       colors: {
         bg: {
           light: '#ffffff',
-          dark: '#0d0d0f',
+          dark: '#000000',
         },
         surface: {
-          soft: '#f8eff3',
-          'soft-dark': '#241920',
-          card: '#f4f4f6',
-          'card-dark': '#17171a',
+          soft: '#f4f4f5',
+          'soft-dark': '#141416',
+          card: '#ffffff',
+          'card-dark': '#161618',
         },
         accent: {
-          rose: '#c4457b',
-          'rose-hover': '#b03b6d',
-          'rose-dark': '#e26197',
-          pink: '#d98aab',
+          rose: '#ffffff',
+          'rose-hover': '#e4e4e7',
+          'rose-dark': '#ffffff',
+          pink: '#a1a1aa',
         },
         ink: {
           light: '#111113',
-          dark: '#f5f5f7',
+          dark: '#ffffff',
           muted: '#6e6e73',
-          'muted-dark': '#8e8e93',
+          'muted-dark': '#71717a',
         },
         border: {
-          soft: '#f1e2ea',
-          'soft-dark': '#34252f',
+          soft: '#e4e4e7',
+          'soft-dark': '#27272a',
         }
       },
       borderRadius: {
@@ -43,12 +43,8 @@ export default {
         '13': '3.25rem',
       },
       fontFamily: {
-        inter: ['Inter', 'system-ui', 'sans-serif'],
-        editorial: ['"Playfair Display"', 'Georgia', 'serif'],
-        space: ['"Space Grotesk"', 'monospace', 'sans-serif'],
-        jakarta: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        system: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"SF Pro Display"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
-        manrope: ['Manrope', 'system-ui', 'sans-serif'],
+        sans: ['Unbounded', 'system-ui', 'sans-serif'],
+        unbounded: ['Unbounded', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         'subtle': '0 4px 24px -2px rgba(196, 69, 123, 0.07)',
