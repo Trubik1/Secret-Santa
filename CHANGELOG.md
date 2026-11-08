@@ -18,3 +18,4 @@
 - **[2026-11-08]** feat(hooks): create useTelegram hook for ready and expand WebApp methods
 - **[2026-11-08]** feat(nav): scaffold initial bottom dock navigation container
 - **[2026-11-08]** chore: update gitignore for temporary media and local caches
+- **[2026-11-08]** docs: document project architecture, serverless setup and local run commands
