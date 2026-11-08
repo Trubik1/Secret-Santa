@@ -16,3 +16,4 @@
 - **[2026-11-08]** feat(api): implement structured error handling and EndpointError propagation
 - **[2026-11-08]** feat(db): prepare tgcloud migration runner and SQLite table structures
 - **[2026-11-08]** feat(hooks): create useTelegram hook for ready and expand WebApp methods
+- **[2026-11-08]** feat(nav): scaffold initial bottom dock navigation container
