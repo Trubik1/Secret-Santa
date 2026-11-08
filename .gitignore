@@ -32,3 +32,8 @@ pnpm-debug.log*
 *.sw?
 .DS_Store
 Thumbs.db
+
+# Temp scratch audio & test media
+*.mp3
+*.wav
+current_bot_pic.jpg
