@@ -11,3 +11,4 @@
 - **[2026-11-08]** feat(api): implement serverlessCall wrapper with TMA header authentication
 - **[2026-11-08]** feat(mock): add initial mock dataset for gifts and categories
 - **[2026-11-08]** feat(ui): create initial AddGiftModal form with title and price fields
+- **[2026-11-08]** feat(ui): build base GiftCard component layout and image container
