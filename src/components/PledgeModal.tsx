@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Gift } from '../types'
 import { X, Users, MessageCircle, AlertCircle, Loader2, Sparkles } from 'lucide-react'
+import { formatByn, formatRub } from '../utils/currency'
 
 interface PledgeModalProps {
   isOpen: boolean
@@ -89,9 +90,14 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
             <h3 className="text-xs font-bold text-ink-light dark:text-ink-dark truncate">
               {gift.title}
             </h3>
-            <p className="text-sm font-extrabold text-accent-rose mt-0.5">
-              Цель: {targetAmount.toLocaleString('ru-RU')} ₽
-            </p>
+            <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
+              <span className="text-sm font-extrabold text-accent-rose">
+                Цель: {formatRub(targetAmount)}
+              </span>
+              <span className="text-xs font-bold text-ink-muted">
+                (~{formatByn(targetAmount)})
+              </span>
+            </div>
           </div>
         </div>
 
@@ -99,7 +105,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
         <div className="mt-4">
           <div className="flex justify-between items-baseline mb-1 text-xs">
             <span className="font-bold text-ink-light dark:text-ink-dark">
-              Собрано {currentTotal.toLocaleString('ru-RU')} из {targetAmount.toLocaleString('ru-RU')} ₽
+              Собрано {currentTotal.toLocaleString('ru-RU')} ₽ (~{formatByn(currentTotal)})
             </span>
             <span className="font-extrabold text-accent-rose">{progressPercent}%</span>
           </div>
@@ -111,7 +117,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
           </div>
           {remaining > 0 && (
             <p className="text-[11px] text-ink-muted dark:text-ink-muted-dark mt-1">
-              Осталось собрать: <b>{remaining.toLocaleString('ru-RU')} ₽</b>
+              Осталось: <b>{remaining.toLocaleString('ru-RU')} ₽</b> (~{formatByn(remaining)})
             </p>
           )}
         </div>
@@ -119,9 +125,16 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
         {/* Pledge Form */}
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
-            <label className="block text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider mb-1.5">
-              Сумма вашего взноса (₽)
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider">
+                Сумма взноса (₽)
+              </label>
+              {parseInt(amount, 10) > 0 && (
+                <span className="text-xs font-bold text-accent-rose">
+                  ≈ {formatByn(parseInt(amount, 10))} бел. руб.
+                </span>
+              )}
+            </div>
             <input
               type="number"
               min="1"
@@ -141,7 +154,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                   onClick={() => handleQuickAdd(val)}
                   className="px-3 py-1 rounded-full text-xs font-bold bg-surface-card dark:bg-surface-card-dark text-ink-muted hover:text-accent-rose border border-border-soft dark:border-border-soft-dark active-press transition-colors"
                 >
-                  +{val.toLocaleString('ru-RU')} ₽
+                  +{val.toLocaleString('ru-RU')} ₽ (~{formatByn(val)})
                 </button>
               ))}
               {remaining > 0 && (
@@ -153,7 +166,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                   }}
                   className="px-3 py-1 rounded-full text-xs font-bold bg-accent-rose/10 text-accent-rose border border-accent-rose/20 active-press transition-colors"
                 >
-                  Внести весь остаток ({remaining.toLocaleString('ru-RU')} ₽)
+                  Весь остаток ({remaining.toLocaleString('ru-RU')} ₽ · ~{formatByn(remaining)})
                 </button>
               )}
             </div>

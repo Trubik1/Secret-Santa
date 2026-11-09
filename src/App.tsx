@@ -9,6 +9,8 @@ import {
   resetMockData,
 } from './api/serverless'
 import { parseWildberriesClient } from './api/clientParser'
+import { CurrencyMode } from './utils/currency'
+import { fireConfetti } from './utils/confetti'
 import { HeroProfile } from './components/HeroProfile'
 import { CategoryFilter } from './components/CategoryFilter'
 import { GiftCard } from './components/GiftCard'
@@ -16,6 +18,7 @@ import { AddGiftModal } from './components/AddGiftModal'
 import { PledgeModal } from './components/PledgeModal'
 import { EditProfileModal } from './components/EditProfileModal'
 import { BudgetHelperModal } from './components/BudgetHelperModal'
+import { ShareModal } from './components/ShareModal'
 import { StickyActionBar } from './components/StickyActionBar'
 import { DevToolsBar } from './components/DevToolsBar'
 import { Loader2, Plus, CheckCircle2, Sparkles, SlidersHorizontal } from 'lucide-react'
@@ -24,7 +27,6 @@ type BudgetFilter = 'all' | 'under3k' | 'mid' | 'high' | 'crowdfund'
 
 export function App() {
   const {
-    tg,
     user,
     startParam,
     colorScheme,
@@ -39,6 +41,13 @@ export function App() {
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('all')
   const [selectedBudget, setSelectedBudget] = useState<BudgetFilter>('all')
+  const [currencyMode, setCurrencyMode] = useState<CurrencyMode>(() => {
+    try {
+      return (localStorage.getItem('wishlist_curr') as CurrencyMode) || 'both'
+    } catch (_) {
+      return 'both'
+    }
+  })
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -46,6 +55,7 @@ export function App() {
   const [pledgingGift, setPledgingGift] = useState<Gift | null>(null)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
   // Toast feedback
   const [toast, setToast] = useState<string | null>(null)
@@ -54,6 +64,23 @@ export function App() {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
   }, [])
+
+  const handleToggleCurrencyMode = () => {
+    haptics.selection()
+    const next: CurrencyMode =
+      currencyMode === 'both' ? 'rub' : currencyMode === 'rub' ? 'byn' : 'both'
+    setCurrencyMode(next)
+    try {
+      localStorage.setItem('wishlist_curr', next)
+    } catch (_) {}
+    showToast(
+      next === 'both'
+        ? 'Валюта: ₽ + Br (Обе валюты) 🇧🇾🇷🇺'
+        : next === 'rub'
+        ? 'Валюта: Российские рубли (₽)'
+        : 'Валюта: Белорусские рубли (Br) 🇧🇾'
+    )
+  }
 
   // Determine target owner ID from start_param or caller
   const targetOwnerId = useMemo(() => {
@@ -169,6 +196,7 @@ export function App() {
     try {
       await serverlessCall('bookGift', { id: gift.id, action: 'book' })
       haptics.notification('success')
+      fireConfetti()
       showToast('Подарок успешно забронирован! 🎉')
       await loadWishlist()
     } catch (err: any) {
@@ -197,6 +225,7 @@ export function App() {
   const handleConfirmPledge = async (giftId: string, amount: number) => {
     await serverlessCall('pledgeGift', { giftId, amount })
     haptics.notification('success')
+    fireConfetti()
     showToast(`Вы внесли ${amount.toLocaleString('ru-RU')} ₽! Спасибо 🤝`)
     await loadWishlist()
   }
@@ -220,18 +249,7 @@ export function App() {
 
   const handleShareWishlist = () => {
     haptics.impact('medium')
-    const botUsername = import.meta.env.VITE_BOT_USERNAME || 'yamload_bot'
-    const ownerId = data?.profile.id || user?.id || 10001
-    const shareLink = `https://t.me/${botUsername}?start=wish_${ownerId}`
-    const shareText = `Привет! Вот мой список желаний на грядущий праздник: ${shareLink} 🎂`
-    const tgShareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent('Мой вишлист 🎁')}`
-
-    if (tg?.openTelegramLink) {
-      tg.openTelegramLink(tgShareUrl)
-    } else {
-      navigator.clipboard?.writeText(shareText)
-      showToast('Ссылка скопирована в буфер обмена!')
-    }
+    setIsShareModalOpen(true)
   }
 
   const handleCreateOwn = () => {
@@ -292,7 +310,11 @@ export function App() {
               profile={data.profile}
               isOwner={data.isOwner}
               stats={data.stats}
+              currencyMode={currencyMode}
               onEditProfile={() => setIsProfileModalOpen(true)}
+              onOpenShare={() => setIsShareModalOpen(true)}
+              onToggleCurrencyMode={handleToggleCurrencyMode}
+              onHaptic={() => haptics.impact('light')}
             />
 
             {/* Sticky Filters Area */}
@@ -303,7 +325,7 @@ export function App() {
                 onSelectCategory={handleSelectCategory}
               />
 
-              {/* Secondary Budget & Assistant Pills Bar */}
+              {/* Secondary Budget & Currency Pills Bar */}
               <div className="flex items-center gap-1.5 px-4 pt-1.5 overflow-x-auto no-scrollbar">
                 {/* Smart Helper Pill */}
                 {!data.isOwner && (
@@ -319,11 +341,21 @@ export function App() {
                   </button>
                 )}
 
+                {/* Currency Switcher Pill */}
+                <button
+                  onClick={handleToggleCurrencyMode}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-extrabold bg-surface-soft dark:bg-surface-soft-dark text-ink-light dark:text-ink-dark border border-border-soft dark:border-border-soft-dark shrink-0 active-press hover:border-accent-rose transition-colors"
+                  title="Переключить валюту: ₽, Br или Обе"
+                >
+                  <span>🇧🇾/🇷🇺</span>
+                  <span>{currencyMode === 'both' ? '₽ + Br' : currencyMode === 'rub' ? '₽' : 'Br'}</span>
+                </button>
+
                 {[
                   { id: 'all' as const, label: 'Все цены' },
-                  { id: 'under3k' as const, label: 'до 3 000 ₽' },
-                  { id: 'mid' as const, label: '3к – 10к ₽' },
-                  { id: 'high' as const, label: 'от 10 000 ₽' },
+                  { id: 'under3k' as const, label: 'до 3к ₽ (~100 Br)' },
+                  { id: 'mid' as const, label: '3к–10к ₽ (~100–340 Br)' },
+                  { id: 'high' as const, label: 'от 10к ₽ (~340+ Br)' },
                   { id: 'crowdfund' as const, label: 'Складчина 🤝' },
                 ].map((b) => {
                   const isSelected = selectedBudget === b.id
@@ -353,6 +385,7 @@ export function App() {
                       key={gift.id}
                       gift={gift}
                       isOwner={data.isOwner}
+                      currencyMode={currencyMode}
                       onBook={handleBookGift}
                       onUnbook={handleUnbookGift}
                       onPledge={handleOpenPledge}
@@ -455,6 +488,17 @@ export function App() {
           onClose={() => setIsBudgetModalOpen(false)}
           onSelectGift={handleSelectGiftFromHelper}
           onHaptic={() => haptics.impact('medium')}
+        />
+      )}
+
+      {data && (
+        <ShareModal
+          isOpen={isShareModalOpen}
+          user={data.profile}
+          giftsCount={data.gifts.length}
+          onClose={() => setIsShareModalOpen(false)}
+          onHaptic={() => haptics.impact('light')}
+          onShowToast={showToast}
         />
       )}
 

@@ -1,10 +1,12 @@
 import React from 'react'
 import { Gift } from '../types'
 import { ExternalLink, Edit3, Trash2, Users, Check, Gift as GiftIcon } from 'lucide-react'
+import { CurrencyMode, formatDualPrice } from '../utils/currency'
 
 interface GiftCardProps {
   gift: Gift
   isOwner: boolean
+  currencyMode?: CurrencyMode
   onBook: (gift: Gift) => void
   onUnbook: (gift: Gift) => void
   onPledge: (gift: Gift) => void
@@ -16,6 +18,7 @@ interface GiftCardProps {
 export const GiftCard: React.FC<GiftCardProps> = ({
   gift,
   isOwner,
+  currencyMode = 'both',
   onBook,
   onUnbook,
   onPledge,
@@ -23,7 +26,7 @@ export const GiftCard: React.FC<GiftCardProps> = ({
   onDelete,
   onOpenLink,
 }) => {
-  const formattedPrice = gift.price > 0 ? `${gift.price.toLocaleString('ru-RU')} ₽` : 'Без цены'
+  const { primary: pricePrimary, secondary: priceSecondary } = formatDualPrice(gift.price, currencyMode)
   const targetPrice = gift.targetAmount > 0 ? gift.targetAmount : gift.price
   const currentPledged = gift.totalPledged || 0
   const progressPercent = targetPrice > 0 ? Math.min(100, Math.round((currentPledged / targetPrice) * 100)) : 0
@@ -95,10 +98,17 @@ export const GiftCard: React.FC<GiftCardProps> = ({
             {gift.title}
           </h3>
 
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-base font-extrabold tracking-tight text-accent-rose dark:text-accent-rose-dark">
-              {formattedPrice}
-            </span>
+          <div className="mt-2 flex items-baseline justify-between flex-wrap gap-1">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-base font-extrabold tracking-tight text-accent-rose dark:text-accent-rose-dark">
+                {pricePrimary}
+              </span>
+              {priceSecondary && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface-soft dark:bg-surface-soft-dark text-ink-muted border border-border-soft/50">
+                  {priceSecondary}
+                </span>
+              )}
+            </div>
             {gift.isCrowdfund && (
               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                 <Users size={12} />
@@ -111,7 +121,7 @@ export const GiftCard: React.FC<GiftCardProps> = ({
           {gift.isCrowdfund && !isOwner && (
             <div className="mt-3">
               <div className="flex justify-between text-[11px] font-semibold text-ink-muted dark:text-ink-muted-dark mb-1">
-                <span>Собрано {currentPledged.toLocaleString('ru-RU')} ₽</span>
+                <span>Собрано {formatDualPrice(currentPledged, currencyMode).primary}</span>
                 <span>{progressPercent}%</span>
               </div>
               <div className="w-full h-2 rounded-full bg-border-soft dark:bg-border-soft-dark overflow-hidden">
@@ -159,7 +169,7 @@ export const GiftCard: React.FC<GiftCardProps> = ({
                 className="w-full py-2.5 rounded-full text-xs font-bold text-white bg-accent-rose hover:bg-accent-rose-hover flex items-center justify-center gap-1.5 active-press shadow-md shadow-accent-rose/20 transition-all"
               >
                 <Users size={14} />
-                {gift.myPledgedAmount ? `Внесли ${gift.myPledgedAmount.toLocaleString('ru-RU')} ₽` : 'Скинуться 🤝'}
+                {gift.myPledgedAmount ? `Внесли ${formatDualPrice(gift.myPledgedAmount, currencyMode).primary}` : 'Скинуться 🤝'}
               </button>
             ) : gift.isBooked ? (
               gift.isBookedByMe ? (

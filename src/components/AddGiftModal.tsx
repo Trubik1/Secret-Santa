@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Gift, CategoryId, Priority } from '../types'
 import { X, Search, Loader2, Sparkles, Image, Link, Check, AlertCircle } from 'lucide-react'
+import { formatByn, formatRub, rubToByn, bynToRub } from '../utils/currency'
 
 interface AddGiftModalProps {
   isOpen: boolean
@@ -30,6 +31,7 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
   const [price, setPrice] = useState('')
+  const [inputCurrency, setInputCurrency] = useState<'rub' | 'byn'>('rub')
   const [imageUrl, setImageUrl] = useState('')
   const [categoryId, setCategoryId] = useState<CategoryId>('other')
   const [priority, setPriority] = useState<Priority>(1)
@@ -44,6 +46,7 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
     if (initialGift) {
       setTitle(initialGift.title || '')
       setPrice(initialGift.price ? String(initialGift.price) : '')
+      setInputCurrency('rub')
       setUrl(initialGift.url || '')
       setImageUrl(initialGift.imageUrl || '')
       setCategoryId((initialGift.categoryId as CategoryId) || 'other')
@@ -54,6 +57,7 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
     } else {
       setTitle('')
       setPrice('')
+      setInputCurrency('rub')
       setUrl('')
       setImageUrl('')
       setCategoryId('other')
@@ -76,7 +80,10 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
       const res = await onParseUrl(url.trim())
       if (res && res.parsed && (res.title || res.price || res.imageUrl)) {
         if (res.title) setTitle(res.title)
-        if (res.price) setPrice(String(res.price))
+        if (res.price) {
+          setInputCurrency('rub')
+          setPrice(String(res.price))
+        }
         if (res.imageUrl) setImageUrl(res.imageUrl)
         if (res.categoryId && CATEGORIES.some(c => c.id === res.categoryId)) {
           setCategoryId(res.categoryId as CategoryId)
@@ -99,18 +106,19 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
     setIsSubmitting(true)
     onHaptic()
     try {
-      const parsedPrice = parseInt(price, 10) || 0
+      const rawNum = parseFloat(price) || 0
+      const parsedPriceInRub = inputCurrency === 'byn' ? bynToRub(rawNum) : Math.round(rawNum)
 
       await onSave({
         title: title.trim(),
-        price: parsedPrice,
+        price: parsedPriceInRub,
         url: url.trim() || null,
         imageUrl: imageUrl.trim() || null,
         categoryId,
         priority,
         isCrowdfund,
         // Target amount is automatically the gift's price
-        targetAmount: isCrowdfund ? parsedPrice : 0,
+        targetAmount: isCrowdfund ? parsedPriceInRub : 0,
       })
       onClose()
     } catch (err) {
@@ -210,18 +218,68 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
           {/* Price & Category Grid */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider mb-1.5">
-                Цена (₽) *
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider">
+                  Цена *
+                </label>
+                <div className="flex rounded-lg bg-surface-soft dark:bg-surface-soft-dark p-0.5 border border-border-soft dark:border-border-soft-dark text-[10px] font-extrabold">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onHaptic()
+                      if (inputCurrency === 'byn' && price) {
+                        const converted = bynToRub(parseFloat(price) || 0)
+                        setPrice(converted ? String(converted) : '')
+                      }
+                      setInputCurrency('rub')
+                    }}
+                    className={`px-1.5 py-0.5 rounded transition-all ${
+                      inputCurrency === 'rub'
+                        ? 'bg-accent-rose text-white shadow-sm'
+                        : 'text-ink-muted hover:text-ink-light'
+                    }`}
+                  >
+                    ₽
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onHaptic()
+                      if (inputCurrency === 'rub' && price) {
+                        const converted = rubToByn(parseFloat(price) || 0)
+                        setPrice(converted ? String(converted) : '')
+                      }
+                      setInputCurrency('byn')
+                    }}
+                    className={`px-1.5 py-0.5 rounded transition-all ${
+                      inputCurrency === 'byn'
+                        ? 'bg-accent-rose text-white shadow-sm'
+                        : 'text-ink-muted hover:text-ink-light'
+                    }`}
+                  >
+                    Br
+                  </button>
+                </div>
+              </div>
               <input
                 type="number"
                 min="0"
+                step="any"
                 required
-                placeholder="4 990"
+                placeholder={inputCurrency === 'rub' ? '4 990 ₽' : '170 Br'}
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-sm text-ink-light dark:text-ink-dark placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-accent-rose font-medium"
               />
+              {/* Converted currency hint */}
+              {parseFloat(price) > 0 && (
+                <p className="mt-1 text-[11px] font-bold text-accent-rose">
+                  ≈{' '}
+                  {inputCurrency === 'rub'
+                    ? `${formatByn(parseFloat(price), true)} (бел. руб.)`
+                    : `${formatRub(bynToRub(parseFloat(price)))}`}
+                </p>
+              )}
             </div>
 
             <div>

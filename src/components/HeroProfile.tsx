@@ -1,20 +1,50 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { UserProfile, WishlistStats } from '../types'
-import { Calendar, Edit3, Gift as GiftIcon, Sparkles } from 'lucide-react'
+import { Calendar, Edit3, Gift as GiftIcon, Sparkles, Share2 } from 'lucide-react'
+import { CurrencyMode } from '../utils/currency'
 
 interface HeroProfileProps {
   profile: UserProfile
   isOwner: boolean
   stats: WishlistStats
+  currencyMode: CurrencyMode
   onEditProfile: () => void
+  onOpenShare: () => void
+  onToggleCurrencyMode: () => void
+  onHaptic?: () => void
 }
+
+const MASCOT_MESSAGES = [
+  'Цены в ₽ и бел. рублях 🇧🇾',
+  'Не забудь загадать желание! ✨',
+  'Праздник близко! 🎉',
+  'Подарки — это радость 💖',
+  'Ты супер! 🚀',
+]
 
 export const HeroProfile: React.FC<HeroProfileProps> = ({
   profile,
   isOwner,
   stats,
+  currencyMode,
   onEditProfile,
+  onOpenShare,
+  onToggleCurrencyMode,
+  onHaptic,
 }) => {
+  const [mascotBubble, setMascotBubble] = useState<string | null>(null)
+  const [mascotIndex, setMascotIndex] = useState(0)
+
+  const handleMascotClick = () => {
+    onHaptic?.()
+    const nextMsg = MASCOT_MESSAGES[mascotIndex % MASCOT_MESSAGES.length]
+    setMascotIndex((prev) => prev + 1)
+    setMascotBubble(nextMsg)
+    setTimeout(() => {
+      setMascotBubble(null)
+    }, 2800)
+  }
+
   // Calculate countdown days
   const countdownText = React.useMemo(() => {
     if (!profile.eventDate) return null
@@ -44,12 +74,21 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
         {/* Decorative subtle ambient circle */}
         <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-accent-pink/15 blur-2xl pointer-events-none" />
 
-        {/* Unibb 3D Bunny Mascot Sticker */}
-        <div className="absolute -bottom-1 right-2 pointer-events-none select-none z-10 opacity-90 sm:opacity-100">
+        {/* Unibb 3D Bunny Mascot Sticker with Interactive Tap & Bubble */}
+        <div
+          onClick={handleMascotClick}
+          className="absolute -bottom-1 right-2 select-none z-20 cursor-pointer group"
+          title="Нажми на зайку!"
+        >
+          {mascotBubble && (
+            <div className="absolute -top-8 right-0 bg-white dark:bg-zinc-800 text-ink-light dark:text-ink-dark text-[11px] font-bold py-1 px-2.5 rounded-full shadow-lg border border-border-soft dark:border-border-soft-dark whitespace-nowrap animate-bounce">
+              {mascotBubble}
+            </div>
+          )}
           <img
             src="/stickers/bunny-hero.webp"
             alt="Unibb Mascot"
-            className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-md hover:scale-105 transition-transform"
+            className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-md group-hover:scale-110 active:scale-95 transition-transform"
           />
         </div>
 
@@ -98,40 +137,64 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
             </div>
           </div>
 
-          {/* Edit Button for Owner */}
-          {isOwner && (
+          {/* Action Buttons: Share & Edit */}
+          <div className="flex items-center gap-1.5">
             <button
-              onClick={onEditProfile}
+              onClick={onOpenShare}
               className="p-2.5 rounded-full bg-white/80 dark:bg-surface-card-dark/80 text-ink-muted dark:text-ink-muted-dark hover:text-accent-rose transition-colors active-press shadow-sm"
-              title="Редактировать событие"
+              title="Поделиться вишлистом"
             >
-              <Edit3 size={18} />
+              <Share2 size={17} />
             </button>
-          )}
+
+            {isOwner && (
+              <button
+                onClick={onEditProfile}
+                className="p-2.5 rounded-full bg-white/80 dark:bg-surface-card-dark/80 text-ink-muted dark:text-ink-muted-dark hover:text-accent-rose transition-colors active-press shadow-sm"
+                title="Редактировать событие"
+              >
+                <Edit3 size={17} />
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Event Title & Countdown */}
+        {/* Event Title & Countdown & Currency Pill */}
         <div className="mt-5 relative z-10">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <h2 className="text-lg font-bold text-ink-light dark:text-ink-dark flex items-center gap-2">
               <span>{profile.eventTitle || 'Мой День Рождения 🎂'}</span>
             </h2>
 
-            {/* Countdown pill */}
-            {countdownText ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white dark:bg-surface-card-dark text-accent-rose dark:text-accent-rose-dark shadow-sm border border-border-soft/60 dark:border-border-soft-dark/60">
-                <Calendar size={13} />
-                {countdownText}
-              </span>
-            ) : isOwner ? (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {/* Countdown pill */}
+              {countdownText ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white dark:bg-surface-card-dark text-accent-rose dark:text-accent-rose-dark shadow-sm border border-border-soft/60 dark:border-border-soft-dark/60">
+                  <Calendar size={13} />
+                  {countdownText}
+                </span>
+              ) : isOwner ? (
+                <button
+                  onClick={onEditProfile}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white/70 dark:bg-surface-card-dark/70 text-ink-muted hover:text-accent-rose transition-colors"
+                >
+                  <Calendar size={13} />
+                  + Добавить дату
+                </button>
+              ) : null}
+
+              {/* Currency Mode Badge */}
               <button
-                onClick={onEditProfile}
-                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white/70 dark:bg-surface-card-dark/70 text-ink-muted hover:text-accent-rose transition-colors"
+                onClick={onToggleCurrencyMode}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-white dark:bg-surface-card-dark text-ink-light dark:text-ink-dark shadow-sm border border-border-soft/60 dark:border-border-soft-dark/60 active-press hover:text-accent-rose transition-colors"
+                title="Нажми, чтобы переключить валюту (₽, Br, Обе)"
               >
-                <Calendar size={13} />
-                + Добавить дату
+                <span>🇧🇾/🇷🇺</span>
+                <span>
+                  {currencyMode === 'both' ? '₽ + Br' : currencyMode === 'rub' ? '₽ RUB' : 'Br BYN'}
+                </span>
               </button>
-            ) : null}
+            </div>
           </div>
         </div>
 
@@ -154,7 +217,7 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
             </div>
           ) : (
             <div className="w-full flex items-center justify-between text-ink-muted dark:text-ink-muted-dark">
-              <span>Выбирай подарок или скидывайся вместе с друзьями!</span>
+              <span>Выбирай подарок или скидывайся с друзьями!</span>
               <span className="font-bold text-ink-light dark:text-ink-dark">
                 {stats.totalGifts} {stats.totalGifts === 1 ? 'желание' : stats.totalGifts > 1 && stats.totalGifts < 5 ? 'желания' : 'желаний'}
               </span>

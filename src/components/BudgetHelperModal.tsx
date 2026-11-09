@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Gift } from '../types'
 import { X, Sparkles, Gift as GiftIcon, Users, Check, ArrowRight } from 'lucide-react'
+import { formatDualPrice, formatByn } from '../utils/currency'
 
 interface BudgetHelperModalProps {
   isOpen: boolean
@@ -104,9 +105,16 @@ export const BudgetHelperModal: React.FC<BudgetHelperModalProps> = ({
             <label className="text-xs font-bold text-ink-muted uppercase tracking-wider">
               Ваш бюджет
             </label>
-            <span className="text-sm font-extrabold text-accent-rose">
-              {budgetLimit >= 30000 ? 'Любой бюджет' : `до ${budgetLimit.toLocaleString('ru-RU')} ₽`}
-            </span>
+            <div className="text-right">
+              <span className="text-sm font-extrabold text-accent-rose">
+                {budgetLimit >= 30000 ? 'Любой бюджет' : `до ${budgetLimit.toLocaleString('ru-RU')} ₽`}
+              </span>
+              {budgetLimit < 30000 && (
+                <span className="text-xs font-bold text-ink-muted block">
+                  (~{formatByn(budgetLimit)})
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-4 gap-2">
@@ -127,6 +135,11 @@ export const BudgetHelperModal: React.FC<BudgetHelperModalProps> = ({
                   }`}
                 >
                   {val >= 30000 ? 'Любой' : `${val / 1000}k ₽`}
+                  {val < 30000 && (
+                    <span className="block text-[9px] opacity-75 font-normal">
+                      ~{formatByn(val)}
+                    </span>
+                  )}
                 </button>
               )
             })}
@@ -197,10 +210,19 @@ export const BudgetHelperModal: React.FC<BudgetHelperModalProps> = ({
                 <h4 className="text-xs font-bold text-ink-light dark:text-ink-dark truncate">
                   {recommendedGift.title}
                 </h4>
-                <p className="text-xs font-extrabold text-accent-rose mt-0.5">
-                  {recommendedGift.price.toLocaleString('ru-RU')} ₽
-                  {recommendedGift.isCrowdfund ? ' · Складчина' : ''}
-                </p>
+                <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
+                  <span className="text-xs font-extrabold text-accent-rose">
+                    {formatDualPrice(recommendedGift.price).primary}
+                  </span>
+                  <span className="text-[10px] font-bold text-ink-muted">
+                    {formatDualPrice(recommendedGift.price).secondary}
+                  </span>
+                  {recommendedGift.isCrowdfund ? (
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      · Складчина
+                    </span>
+                  ) : null}
+                </div>
               </div>
               <span className="p-2 rounded-full bg-accent-rose text-white shrink-0">
                 <ArrowRight size={14} />
@@ -226,7 +248,7 @@ export const BudgetHelperModal: React.FC<BudgetHelperModalProps> = ({
                   {g.title}
                 </span>
                 <span className="font-extrabold text-accent-rose shrink-0">
-                  {g.price.toLocaleString('ru-RU')} ₽
+                  {formatDualPrice(g.price).fullText}
                 </span>
               </div>
             ))}
