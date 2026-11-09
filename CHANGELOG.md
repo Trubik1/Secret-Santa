@@ -19,3 +19,4 @@
 - **[2026-11-08]** feat(nav): scaffold initial bottom dock navigation container
 - **[2026-11-08]** chore: update gitignore for temporary media and local caches
 - **[2026-11-08]** docs: document project architecture, serverless setup and local run commands
+- **[2026-11-09]** feat(parser): add Wildberries product URL parser for item details
