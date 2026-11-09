@@ -39,3 +39,4 @@
 - **[2026-11-09]** feat(api): add surprise mode logic to getWishlist endpoint
 - **[2026-11-09]** feat(security): protect bookings from self-reservation by wishlist owner
 - **[2026-11-09]** feat(dev): build DevToolsBar for standalone browser mode testing
+- **[2026-11-09]** perf: optimize module imports and split bundle chunks
