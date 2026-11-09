@@ -23,3 +23,4 @@
 - **[2026-11-09]** feat(parser): integrate client-side CORS fallback for WB catalog items
 - **[2026-11-09]** feat(currency): introduce Belarusian Ruble (BYN) currency support
 - **[2026-11-09]** feat(storage): persist selected currency mode in localStorage
+- **[2026-11-09]** style(card): polish GiftCard hover transitions and touch feedback
