@@ -30,3 +30,4 @@
 - **[2026-11-09]** feat(haptics): integrate Telegram HapticFeedback impact and notification events
 - **[2026-11-09]** feat(fx): add celebratory confetti animation on gift actions
 - **[2026-11-09]** feat(share): build ShareModal with copyable telegram bot link
+- **[2026-11-09]** feat(friends): scaffold FriendsWishlistPage for saved friends
