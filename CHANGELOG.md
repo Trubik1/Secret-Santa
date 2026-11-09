@@ -24,3 +24,4 @@
 - **[2026-11-09]** feat(currency): introduce Belarusian Ruble (BYN) currency support
 - **[2026-11-09]** feat(storage): persist selected currency mode in localStorage
 - **[2026-11-09]** style(card): polish GiftCard hover transitions and touch feedback
+- **[2026-11-09]** feat(card): add priority badges (Мечта, Очень хочу, Хочу)
