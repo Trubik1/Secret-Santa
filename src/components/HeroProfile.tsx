@@ -44,6 +44,15 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
         {/* Decorative subtle ambient circle */}
         <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-accent-pink/15 blur-2xl pointer-events-none" />
 
+        {/* Unibb 3D Bunny Mascot Sticker */}
+        <div className="absolute -bottom-1 right-2 pointer-events-none select-none z-10 opacity-90 sm:opacity-100">
+          <img
+            src="/stickers/bunny-hero.webp"
+            alt="Unibb Mascot"
+            className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-md hover:scale-105 transition-transform"
+          />
+        </div>
+
         <div className="flex items-start justify-between relative z-10">
           <div className="flex items-center gap-4">
             {/* Avatar */}

@@ -1,5 +1,26 @@
 import { fetch } from 'sdk'
 
+function getWbBasketNumber(vol) {
+  if (vol <= 143) return 1
+  if (vol <= 287) return 2
+  if (vol <= 431) return 3
+  if (vol <= 719) return 4
+  if (vol <= 1007) return 5
+  if (vol <= 1061) return 6
+  if (vol <= 1115) return 7
+  if (vol <= 1169) return 8
+  if (vol <= 1313) return 9
+  if (vol <= 1601) return 10
+  if (vol <= 1655) return 11
+  if (vol <= 1919) return 12
+  if (vol <= 2045) return 13
+  if (vol <= 2189) return 14
+  if (vol <= 2405) return 15
+  if (vol <= 2621) return 16
+  if (vol <= 2837) return 17
+  return 18 + Math.floor((vol - 2838) / 262)
+}
+
 /**
  * Extracts OpenGraph, Twitter, and Schema meta data from raw HTML.
  */
@@ -8,6 +29,7 @@ function extractMetaFromHtml(html, originalUrl) {
     title: '',
     imageUrl: '',
     price: 0,
+    categoryId: 'other',
     parsed: false,
   }
 
@@ -68,9 +90,7 @@ function extractMetaFromHtml(html, originalUrl) {
           if (!isNaN(pr)) result.price = Math.round(pr)
         }
       }
-    } catch (_) {
-      // ignore json parse errors
-    }
+    } catch (_) {}
   }
 
   result.parsed = Boolean(result.title || result.imageUrl || result.price)
@@ -97,6 +117,7 @@ export async function parseProductUrl(targetUrl) {
     title: '',
     imageUrl: '',
     price: 0,
+    categoryId: 'other',
     url: cleanUrl,
     parsed: false,
   }
@@ -106,66 +127,65 @@ export async function parseProductUrl(targetUrl) {
   }
 
   try {
-    // 1. Wildberries direct API optimization
-    const wbArticleMatch = cleanUrl.match(/(?:wildberries\.ru\/catalog\/|wb\.ru\/catalog\/)(\d+)/i)
-    if (wbArticleMatch && wbArticleMatch[1]) {
-      const nmId = wbArticleMatch[1]
-      try {
-        const apiUrl = `https://card.wb.ru/cards/v1/detail?appType=1&curr=rub&dest=-1257786&spp=30&nm=${nmId}`
-        const res = await fetch(apiUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'application/json',
-          }
-        })
-        if (res.ok) {
-          const data = await res.json()
-          const product = data?.data?.products?.[0]
-          if (product) {
-            // Price in WB is in kopecks / salePriceU
-            const price = product.salePriceU ? Math.round(product.salePriceU / 100) : (product.priceU ? Math.round(product.priceU / 100) : 0)
-            const title = product.name || product.brand ? `${product.brand ? product.brand + ' / ' : ''}${product.name || ''}`.trim() : ''
+    // 1. Wildberries multi-domain API (ru, by, kz, uz, etc.)
+    const wbMatch = cleanUrl.match(/(?:wildberries\.[a-z.]+|wb\.[a-z.]+)\/catalog\/(\d+)/i) || cleanUrl.match(/\/catalog\/(\d+)/i)
+    if (wbMatch && wbMatch[1]) {
+      const nmId = parseInt(wbMatch[1], 10)
+      const vol = Math.floor(nmId / 100000)
+      const part = Math.floor(nmId / 1000)
 
-            // Calculate WB basket host for image
-            const vol = Math.floor(parseInt(nmId, 10) / 100000)
-            const part = Math.floor(parseInt(nmId, 10) / 1000)
-            let basket = '01'
-            if (vol >= 0 && vol <= 143) basket = '01'
-            else if (vol <= 287) basket = '02'
-            else if (vol <= 431) basket = '03'
-            else if (vol <= 719) basket = '04'
-            else if (vol <= 1007) basket = '05'
-            else if (vol <= 1061) basket = '06'
-            else if (vol <= 1115) basket = '07'
-            else if (vol <= 1169) basket = '08'
-            else if (vol <= 1313) basket = '09'
-            else if (vol <= 1601) basket = '10'
-            else if (vol <= 1655) basket = '11'
-            else if (vol <= 1919) basket = '12'
-            else if (vol <= 2045) basket = '13'
-            else if (vol <= 2189) basket = '14'
-            else if (vol <= 2405) basket = '15'
-            else if (vol <= 2621) basket = '16'
-            else if (vol <= 2837) basket = '17'
-            else basket = '18'
+      const targetBasket = getWbBasketNumber(vol)
+      const candidates = [targetBasket, targetBasket - 1, targetBasket + 1].filter((n) => n >= 1 && n <= 50)
 
-            const imageUrl = `https://basket-${basket}.wbbasket.ru/vol${vol}/part${part}/${nmId}/images/big/1.webp`
+      for (const c of candidates) {
+        const num = String(c).padStart(2, '0')
+        const cardUrl = `https://basket-${num}.wbbasket.ru/vol${vol}/part${part}/${nmId}/info/ru/card.json`
+        try {
+          const cardRes = await fetch(cardUrl)
+          if (cardRes.ok) {
+            const card = await cardRes.json()
+            let price = 0
+            try {
+              const prRes = await fetch(`https://basket-${num}.wbbasket.ru/vol${vol}/part${part}/${nmId}/info/price-history.json`)
+              if (prRes.ok) {
+                const prData = await prRes.json()
+                const lastPr = prData[prData.length - 1]
+                if (lastPr?.price?.RUB) {
+                  price = Math.round(lastPr.price.RUB / 100)
+                }
+              }
+            } catch (_) {}
+
+            const imageUrl = `https://basket-${num}.wbbasket.ru/vol${vol}/part${part}/${nmId}/images/big/1.webp`
+            const title = card.imt_name || card.subj_name || 'Товар Wildberries'
+
+            // Category mapping
+            const catName = (card.subj_root_name || card.subj_name || '').toLowerCase()
+            let categoryId = 'other'
+            if (catName.includes('электрон') || catName.includes('бытов') || catName.includes('смарт') || catName.includes('гаджет') || catName.includes('компьютер')) {
+              categoryId = 'gadgets'
+            } else if (catName.includes('одежд') || catName.includes('обув') || catName.includes('аксессуар') || catName.includes('бель')) {
+              categoryId = 'clothes'
+            } else if (catName.includes('дом') || catName.includes('интерьер') || catName.includes('мебель') || catName.includes('кухн') || catName.includes('посуд')) {
+              categoryId = 'home'
+            } else if (catName.includes('книг') || catName.includes('канц')) {
+              categoryId = 'books'
+            }
 
             return {
-              title: title || 'Товар Wildberries',
+              title,
               imageUrl,
               price,
+              categoryId,
               url: cleanUrl,
               parsed: true,
             }
           }
-        }
-      } catch (wbErr) {
-        console.warn('WB direct API failed, falling back to HTML fetch:', wbErr)
+        } catch (_) {}
       }
     }
 
-    // 2. Generic Fetch + OpenGraph parsing
+    // 2. Generic Fetch + OpenGraph parsing (Ozon, other stores)
     const response = await fetch(cleanUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 (TelegramBot/1.0; +https://telegram.org)',
@@ -185,6 +205,7 @@ export async function parseProductUrl(targetUrl) {
       title: parsed.title,
       imageUrl: parsed.imageUrl,
       price: parsed.price,
+      categoryId: parsed.categoryId || 'other',
       url: cleanUrl,
       parsed: parsed.parsed,
     }

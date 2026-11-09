@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Gift, CategoryId, Priority } from '../types'
-import { X, Search, Loader2, Sparkles, Image, Link, Check } from 'lucide-react'
+import { X, Search, Loader2, Sparkles, Image, Link, Check, AlertCircle } from 'lucide-react'
 
 interface AddGiftModalProps {
   isOpen: boolean
   initialGift?: Gift | null
   onClose: () => void
   onSave: (giftData: Partial<Gift>) => Promise<void>
-  onParseUrl: (url: string) => Promise<{ title: string; imageUrl: string; price: number; parsed: boolean }>
+  onParseUrl: (url: string) => Promise<{ title: string; imageUrl: string; price: number; categoryId?: string; parsed: boolean }>
   onHaptic: () => void
 }
 
@@ -34,11 +34,11 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
   const [categoryId, setCategoryId] = useState<CategoryId>('other')
   const [priority, setPriority] = useState<Priority>(1)
   const [isCrowdfund, setIsCrowdfund] = useState(false)
-  const [targetAmount, setTargetAmount] = useState('')
 
   const [isParsing, setIsParsing] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [parseSuccess, setParseSuccess] = useState(false)
+  const [parseError, setParseError] = useState<string | null>(null)
 
   useEffect(() => {
     if (initialGift) {
@@ -49,9 +49,9 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
       setCategoryId((initialGift.categoryId as CategoryId) || 'other')
       setPriority(initialGift.priority || 1)
       setIsCrowdfund(Boolean(initialGift.isCrowdfund))
-      setTargetAmount(initialGift.targetAmount ? String(initialGift.targetAmount) : '')
+      setParseSuccess(false)
+      setParseError(null)
     } else {
-      // Reset defaults
       setTitle('')
       setPrice('')
       setUrl('')
@@ -59,8 +59,8 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
       setCategoryId('other')
       setPriority(1)
       setIsCrowdfund(false)
-      setTargetAmount('')
       setParseSuccess(false)
+      setParseError(null)
     }
   }, [initialGift, isOpen])
 
@@ -70,18 +70,23 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
     if (!url.trim()) return
     setIsParsing(true)
     setParseSuccess(false)
+    setParseError(null)
     onHaptic()
     try {
       const res = await onParseUrl(url.trim())
-      if (res.title) setTitle(res.title)
-      if (res.price) {
-        setPrice(String(res.price))
-        if (isCrowdfund) setTargetAmount(String(res.price))
+      if (res && res.parsed && (res.title || res.price || res.imageUrl)) {
+        if (res.title) setTitle(res.title)
+        if (res.price) setPrice(String(res.price))
+        if (res.imageUrl) setImageUrl(res.imageUrl)
+        if (res.categoryId && CATEGORIES.some(c => c.id === res.categoryId)) {
+          setCategoryId(res.categoryId as CategoryId)
+        }
+        setParseSuccess(true)
+      } else {
+        setParseError('Данные не распознаны автоматически. Пожалуйста, заполните поля ниже вручную.')
       }
-      if (res.imageUrl) setImageUrl(res.imageUrl)
-      setParseSuccess(true)
-    } catch (err) {
-      console.warn('Parser failed:', err)
+    } catch (err: any) {
+      setParseError(err.message || 'Ошибка парсинга ссылки')
     } finally {
       setIsParsing(false)
     }
@@ -95,7 +100,6 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
     onHaptic()
     try {
       const parsedPrice = parseInt(price, 10) || 0
-      const parsedTarget = isCrowdfund ? (parseInt(targetAmount, 10) || parsedPrice) : 0
 
       await onSave({
         title: title.trim(),
@@ -105,7 +109,8 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
         categoryId,
         priority,
         isCrowdfund,
-        targetAmount: parsedTarget,
+        // Target amount is automatically the gift's price
+        targetAmount: isCrowdfund ? parsedPrice : 0,
       })
       onClose()
     } catch (err) {
@@ -138,7 +143,7 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
           {/* Link parser section */}
           <div>
             <label className="block text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider mb-1.5">
-              Ссылка на товар (Ozon, WB, маркетплейсы)
+              Ссылка на товар (Ozon, Wildberries, маркетплейсы)
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -147,9 +152,13 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
                 </span>
                 <input
                   type="url"
-                  placeholder="https://..."
+                  placeholder="https://www.wildberries.ru/catalog/..."
                   value={url}
-                  onChange={(e) => setUrl(e.target.value)}
+                  onChange={(e) => {
+                    setUrl(e.target.value)
+                    setParseSuccess(false)
+                    setParseError(null)
+                  }}
                   className="w-full pl-9 pr-3 py-2.5 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-xs text-ink-light dark:text-ink-dark placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-accent-rose"
                 />
               </div>
@@ -157,7 +166,7 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
                 type="button"
                 onClick={handleParse}
                 disabled={!url.trim() || isParsing}
-                className="px-4 py-2.5 rounded-2xl bg-accent-rose text-white text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 active-press shrink-0 shadow-sm shadow-accent-rose/20"
+                className="px-4 py-2.5 rounded-2xl bg-accent-rose text-white text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 active-press shrink-0 shadow-sm shadow-accent-rose/20 hover:bg-accent-rose-hover transition-all"
               >
                 {isParsing ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -173,6 +182,12 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
               <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
                 <Sparkles size={12} />
                 Данные товара успешно подтянуты!
+              </p>
+            )}
+            {parseError && (
+              <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                <AlertCircle size={12} className="shrink-0" />
+                <span>{parseError}</span>
               </p>
             )}
           </div>
@@ -196,19 +211,15 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider mb-1.5">
-                Цена (₽)
+                Цена (₽) *
               </label>
               <input
                 type="number"
                 min="0"
+                required
                 placeholder="4 990"
                 value={price}
-                onChange={(e) => {
-                  setPrice(e.target.value)
-                  if (isCrowdfund && !targetAmount) {
-                    setTargetAmount(e.target.value)
-                  }
-                }}
+                onChange={(e) => setPrice(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-sm text-ink-light dark:text-ink-dark placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-accent-rose font-medium"
               />
             </div>
@@ -251,7 +262,14 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
               </div>
               {imageUrl && (
                 <div className="w-10 h-10 rounded-xl overflow-hidden bg-surface-soft border border-border-soft shrink-0">
-                  <img src={imageUrl} alt="preview" className="w-full h-full object-cover" />
+                  <img
+                    src={imageUrl}
+                    alt="preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none'
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -287,46 +305,46 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
             </div>
           </div>
 
-          {/* Crowdfunding toggle */}
+          {/* Crowdfunding toggle with high contrast switch */}
           <div className="pt-2">
             <div className="p-3.5 rounded-2xl bg-surface-soft dark:bg-surface-soft-dark border border-border-soft dark:border-border-soft-dark flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-ink-light dark:text-ink-dark">
-                  Разрешить скинуться 🤝
+                <p className="text-xs font-bold text-ink-light dark:text-ink-dark flex items-center gap-1.5">
+                  <span>Разрешить скинуться</span>
+                  <span>🤝</span>
                 </p>
-                <p className="text-[11px] text-ink-muted dark:text-ink-muted-dark">
-                  Для дорогих подарков — друзья смогут собрать сумму вместе
+                <p className="text-[11px] text-ink-muted dark:text-ink-muted-dark mt-0.5">
+                  Для дорогих подарков — цель сбора автоматически равна стоимости
                 </p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-3">
-                <input
-                  type="checkbox"
-                  checked={isCrowdfund}
-                  onChange={(e) => {
-                    setIsCrowdfund(e.target.checked)
-                    if (e.target.checked && !targetAmount) {
-                      setTargetAmount(price || '0')
-                    }
-                  }}
-                  className="sr-only peer"
+
+              {/* High Contrast Visible Switch */}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isCrowdfund}
+                onClick={() => {
+                  onHaptic()
+                  setIsCrowdfund(!isCrowdfund)
+                }}
+                className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none ${
+                  isCrowdfund
+                    ? 'bg-accent-rose shadow-md shadow-accent-rose/30'
+                    : 'bg-zinc-300 dark:bg-zinc-700'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    isCrowdfund ? 'translate-x-6' : 'translate-x-0'
+                  }`}
                 />
-                <div className="w-11 h-6 bg-border-soft peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-rose" />
-              </label>
+              </button>
             </div>
 
             {isCrowdfund && (
-              <div className="mt-3 animate-fade-in">
-                <label className="block text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider mb-1.5">
-                  Целевая сумма сбора (₽)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="Например, 45 000"
-                  value={targetAmount}
-                  onChange={(e) => setTargetAmount(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-sm text-ink-light dark:text-ink-dark placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-accent-rose font-medium"
-                />
+              <div className="mt-2.5 px-3 py-2 rounded-xl bg-accent-rose/10 border border-accent-rose/20 text-xs font-bold text-accent-rose dark:text-accent-rose-dark flex items-center justify-between animate-fade-in">
+                <span>🎯 Цель сбора:</span>
+                <span>{price ? `${parseInt(price, 10).toLocaleString('ru-RU')} ₽` : 'Укажите цену подарка выше'}</span>
               </div>
             )}
           </div>

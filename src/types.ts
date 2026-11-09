@@ -70,6 +70,7 @@ export interface ParsedProduct {
   title: string
   imageUrl: string
   price: number
+  categoryId?: string
   url: string
   parsed: boolean
 }
