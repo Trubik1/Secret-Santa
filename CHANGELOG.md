@@ -33,3 +33,4 @@
 - **[2026-11-09]** feat(friends): scaffold FriendsWishlistPage for saved friends
 - **[2026-11-09]** feat(friends): implement friend search by link and direct id parsing
 - **[2026-11-09]** feat(santa): create SecretSantaPage scaffold and temporary banner
+- **[2026-11-09]** feat(profile): enhance HeroProfile with event countdown calculation
