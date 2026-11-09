@@ -36,3 +36,4 @@
 - **[2026-11-09]** feat(profile): enhance HeroProfile with event countdown calculation
 - **[2026-11-09]** feat(bot): add Telegram /start command deep-linking handler
 - **[2026-11-09]** feat(api): implement bookGift serverless endpoint with atomic check
+- **[2026-11-09]** feat(api): add surprise mode logic to getWishlist endpoint
