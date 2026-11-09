@@ -32,3 +32,4 @@
 - **[2026-11-09]** feat(share): build ShareModal with copyable telegram bot link
 - **[2026-11-09]** feat(friends): scaffold FriendsWishlistPage for saved friends
 - **[2026-11-09]** feat(friends): implement friend search by link and direct id parsing
+- **[2026-11-09]** feat(santa): create SecretSantaPage scaffold and temporary banner
