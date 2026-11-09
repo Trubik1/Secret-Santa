@@ -21,3 +21,4 @@
 - **[2026-11-08]** docs: document project architecture, serverless setup and local run commands
 - **[2026-11-09]** feat(parser): add Wildberries product URL parser for item details
 - **[2026-11-09]** feat(parser): integrate client-side CORS fallback for WB catalog items
+- **[2026-11-09]** feat(currency): introduce Belarusian Ruble (BYN) currency support
