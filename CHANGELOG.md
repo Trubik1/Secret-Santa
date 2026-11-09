@@ -38,3 +38,4 @@
 - **[2026-11-09]** feat(api): implement bookGift serverless endpoint with atomic check
 - **[2026-11-09]** feat(api): add surprise mode logic to getWishlist endpoint
 - **[2026-11-09]** feat(security): protect bookings from self-reservation by wishlist owner
+- **[2026-11-09]** feat(dev): build DevToolsBar for standalone browser mode testing
