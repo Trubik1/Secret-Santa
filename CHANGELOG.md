@@ -26,3 +26,4 @@
 - **[2026-11-09]** style(card): polish GiftCard hover transitions and touch feedback
 - **[2026-11-09]** feat(card): add priority badges (Мечта, Очень хочу, Хочу)
 - **[2026-11-09]** feat(modal): build BudgetHelperModal for smart gift selection
+- **[2026-11-09]** feat(modal): implement iOS fluid drag-to-dismiss gesture for details
