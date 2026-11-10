@@ -51,3 +51,4 @@
 - **[2026-11-10]** feat(api): handle serverless envelope parsing and timeout recovery
 - **[2026-11-10]** feat(api): implement updateProfile endpoint for custom event dates
 - **[2026-11-10]** feat(share): format concise and clickable Telegram invitation message
+- **[2026-11-10]** feat(profile): sync Telegram user profile photo on app load
