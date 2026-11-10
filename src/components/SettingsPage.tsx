@@ -105,31 +105,25 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   }
 
   return (
-    <div className="w-full px-4 pt-3 pb-28 animate-fade-in space-y-3">
-      {/* Page Title */}
+    <div className="w-full pt-2 pb-28 select-none animate-fadeIn space-y-3">
+      {/* Studio Minimal Header */}
       <div className="mb-2">
-        <span className="text-[10px] font-black uppercase tracking-wider text-[#c4457b]">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
           Параметры
         </span>
-        <h1 className="text-xl font-black text-white mt-0.5">
-          Настройки ⚙️
+        <h1 className="text-lg sm:text-xl font-black text-white mt-0.5">
+          Настройки
         </h1>
         <p className="text-xs text-zinc-400 mt-0.5">
           Управление валютой, событием и ссылкой на вишлист
         </p>
       </div>
 
-      {/* ======================================================== */}
-      {/* BENTO GRID DASHBOARD (Clean iOS 18 Tiles)                */}
-      {/* ======================================================== */}
-
       {/* Bento 1: Top Wide Profile & Status Card */}
-      <div className="p-4 rounded-3xl bg-[#17171a] border border-[#34252f] relative overflow-hidden shadow-sm">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-[#c4457b]/10 rounded-full blur-2xl pointer-events-none" />
-
+      <div className="p-4 rounded-3xl bg-[#161618] border border-white/10 shadow-2xl relative overflow-hidden">
         <div className="flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-tr from-[#c4457b] to-[#d98aab] flex items-center justify-center text-white font-black text-lg shadow-sm border border-white/10 shrink-0">
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-zinc-800 ring-1 ring-white/10 flex items-center justify-center text-white font-black text-lg shrink-0">
               {profile.photoUrl ? (
                 <img src={profile.photoUrl} alt={profile.firstName} className="w-full h-full object-cover" />
               ) : (
@@ -138,13 +132,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
 
             <div className="min-w-0">
-              <h3 className="text-sm font-black text-white truncate">
+              <h3 className="text-xs sm:text-sm font-black text-white truncate">
                 {profile.firstName} {profile.lastName || ''}
               </h3>
               {profile.username && (
                 <p className="text-[11px] text-zinc-400 truncate">@{profile.username}</p>
               )}
-              <div className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black border border-emerald-500/20">
+              <div className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 text-[10px] font-bold border border-white/10">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span>Вишлист активен</span>
               </div>
@@ -153,37 +147,37 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
           <button
             onClick={handleCopyLink}
-            className="p-2.5 rounded-2xl bg-[#241920] border border-[#c4457b]/30 text-[#c4457b] active-press hover:bg-[#c4457b] hover:text-white transition-all shadow-sm shrink-0"
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-zinc-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 shrink-0"
             title="Скопировать ссылку"
           >
-            <Share2 size={16} />
+            <Share2 size={15} />
           </button>
         </div>
       </div>
 
       {/* Bento 2 & 3: Two Middle Square Tiles */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2.5">
         {/* Square Tile: Currency */}
-        <div className="p-4 rounded-3xl bg-[#17171a] border border-[#34252f] flex flex-col justify-between shadow-sm">
+        <div className="p-4 rounded-3xl bg-[#161618] border border-white/10 flex flex-col justify-between shadow-md">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                 Валюта
               </span>
-              <Coins size={14} className="text-[#c4457b]" />
+              <Coins size={14} className="text-zinc-400" />
             </div>
 
             <div className="flex items-baseline gap-1.5 mt-1">
               <span className="text-xl leading-none">{currentCurrency.flag}</span>
-              <span className="text-lg font-black text-white">{currencyMode.toUpperCase()}</span>
+              <span className="text-base sm:text-lg font-black text-white">{currencyMode.toUpperCase()}</span>
             </div>
 
-            <div className="text-[11px] text-[#c4457b] font-extrabold mt-0.5">
+            <div className="text-[11px] text-zinc-400 font-bold mt-0.5">
               Символ: {currentCurrency.symbol}
             </div>
           </div>
 
-          {/* Quick 1-tap currency selector chips inside the tile */}
+          {/* Quick 1-tap currency selector chips */}
           <div className="grid grid-cols-5 gap-1 mt-3">
             {ALL_CURRENCIES.map((c) => {
               const isSelected = currencyMode === c.id
@@ -195,10 +189,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     onSelectCurrency(c.id)
                     onShowToast(`Валюта: ${c.name} (${c.symbol})`)
                   }}
-                  className={`py-1.5 rounded-lg text-[10px] font-black flex items-center justify-center border transition-all active-press ${
+                  className={`py-1.5 rounded-lg text-[10px] font-black flex items-center justify-center border transition-all active:scale-95 ${
                     isSelected
-                      ? 'bg-[#c4457b] text-white border-[#c4457b] shadow-sm'
-                      : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white'
+                      ? 'bg-white text-black border-white shadow-sm'
+                      : 'bg-zinc-900 text-zinc-400 border-white/5 hover:text-white'
                   }`}
                   title={c.name}
                 >
@@ -210,21 +204,21 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
 
         {/* Square Tile: Holiday / Event */}
-        <div className="p-4 rounded-3xl bg-[#17171a] border border-[#34252f] flex flex-col justify-between shadow-sm">
+        <div className="p-4 rounded-3xl bg-[#161618] border border-white/10 flex flex-col justify-between shadow-md">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                 Праздник
               </span>
-              <Calendar size={14} className="text-[#c4457b]" />
+              <Calendar size={14} className="text-zinc-400" />
             </div>
 
             <div className="text-xs font-black text-white mt-1.5 line-clamp-1">
               {hasEvent && eventTitle ? eventTitle : 'Круглогодичный'}
             </div>
 
-            <div className="text-[10px] text-zinc-400 mt-0.5 line-clamp-1">
-              {hasEvent && eventDate ? `Дата: ${eventDate}` : 'Без привязки к дате ♾️'}
+            <div className="text-[10px] text-zinc-400 mt-0.5 line-clamp-1 font-medium">
+              {hasEvent && eventDate ? `Дата: ${eventDate}` : 'Без даты ♾️'}
             </div>
           </div>
 
@@ -234,24 +228,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               setHasEvent(true)
               setIsEventEditorOpen(!isEventEditorOpen)
             }}
-            className={`w-full py-2 rounded-xl text-[10px] font-black border transition-all active-press mt-3 flex items-center justify-center gap-1 ${
-              hasEvent && eventTitle
-                ? 'bg-[#241920] border-[#c4457b]/60 text-[#c4457b]'
-                : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-600'
-            }`}
+            className="w-full py-2 rounded-xl text-[10px] font-black border border-white/10 bg-white/10 hover:bg-white/20 text-white transition-all active:scale-95 mt-3 flex items-center justify-center gap-1"
           >
-            <span>{hasEvent && eventTitle ? 'Изменить дату' : '+ Добавить дату'}</span>
+            <span>{hasEvent && eventTitle ? 'Изменить' : '+ Дата'}</span>
             {isEventEditorOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </button>
         </div>
       </div>
 
-      {/* Event Editor Accordion (Smoothly opens when user taps event button) */}
+      {/* Event Editor Accordion */}
       {isEventEditorOpen && isOwner && (
-        <div className="p-4 rounded-3xl bg-[#17171a] border border-[#c4457b]/50 shadow-md animate-fade-in space-y-3">
-          <div className="flex items-center justify-between border-b border-[#34252f] pb-2">
+        <div className="p-4 rounded-3xl bg-[#161618] border border-white/15 shadow-2xl animate-fadeIn space-y-3">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2">
             <h4 className="text-xs font-black text-white flex items-center gap-1.5">
-              <Calendar size={14} className="text-[#c4457b]" />
+              <Calendar size={14} className="text-zinc-400" />
               <span>Настройка события</span>
             </h4>
             {hasEvent && (
@@ -266,7 +256,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </div>
 
           <div>
-            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 mb-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
               Быстрый повод
             </label>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -275,10 +265,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   key={chip}
                   type="button"
                   onClick={() => handleSelectHolidayChip(chip)}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all active-press ${
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all active:scale-95 ${
                     eventTitle === chip
-                      ? 'bg-[#c4457b] text-white border-[#c4457b]'
-                      : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:border-zinc-500'
+                      ? 'bg-white text-black border-white font-extrabold shadow-sm'
+                      : 'bg-zinc-900 text-zinc-400 border-white/5 hover:text-white'
                   }`}
                 >
                   {chip}
@@ -290,33 +280,33 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               placeholder="Или введите свой повод (например, Юбилей)"
               value={eventTitle}
               onChange={(e) => setEventTitle(e.target.value)}
-              className="w-full mt-2 px-3.5 py-2.5 rounded-xl bg-zinc-800/80 border border-zinc-700 text-xs font-bold text-white focus:outline-none focus:border-[#c4457b]"
+              className="w-full mt-2 px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-white/30"
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 mb-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
               Срок
             </label>
             <div className="flex items-center gap-1.5 flex-wrap mb-2">
               <button
                 type="button"
                 onClick={() => handleSelectQuickDate(7, 'Праздник 🎉')}
-                className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-[10px] font-bold text-zinc-300 border border-zinc-700 active-press"
+                className="px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-[10px] font-bold text-zinc-300 border border-white/5 active:scale-95"
               >
                 +1 неделя
               </button>
               <button
                 type="button"
                 onClick={() => handleSelectQuickDate(14, 'Праздник 🎉')}
-                className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-[10px] font-bold text-zinc-300 border border-zinc-700 active-press"
+                className="px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-[10px] font-bold text-zinc-300 border border-white/5 active:scale-95"
               >
                 +2 недели
               </button>
               <button
                 type="button"
                 onClick={() => handleSelectQuickDate(30, 'Праздник 🎉')}
-                className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-[10px] font-bold text-zinc-300 border border-zinc-700 active-press"
+                className="px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-[10px] font-bold text-zinc-300 border border-white/5 active:scale-95"
               >
                 +1 месяц
               </button>
@@ -327,7 +317,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               min={todayString}
               value={eventDate}
               onChange={(e) => setEventDate(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800/80 border border-zinc-700 text-xs font-bold text-white focus:outline-none focus:border-[#c4457b]"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-white/30"
             />
           </div>
 
@@ -335,7 +325,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             type="button"
             disabled={isSaving}
             onClick={handleSaveEvent}
-            className="w-full py-2.5 rounded-full bg-[#c4457b] hover:bg-[#b03b6d] text-white text-xs font-black shadow-md shadow-[#c4457b]/25 active-press transition-all flex items-center justify-center gap-1.5"
+            className="w-full py-3 rounded-full bg-white hover:bg-zinc-200 text-black text-xs font-black shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5"
           >
             {isSaving ? 'Сохранение...' : 'Сохранить событие ✨'}
           </button>
@@ -343,22 +333,22 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       )}
 
       {/* Bento 4: Wide Wishlist Link Tile */}
-      <div className="p-4 rounded-3xl bg-[#17171a] border border-[#34252f] shadow-sm flex items-center justify-between">
+      <div className="p-4 rounded-3xl bg-[#161618] border border-white/10 shadow-md flex items-center justify-between">
         <div className="min-w-0 pr-3">
-          <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
             Ссылка на вишлист
           </span>
           <p className="text-xs text-white font-bold truncate mt-0.5">
             t.me/giftly_me_bot?start=wish_{profile.id}
           </p>
-          <span className="text-[10px] text-zinc-400 block mt-0.5">
+          <span className="text-[10px] text-zinc-500 block mt-0.5 font-medium">
             Отправьте друзьям, чтобы они выбрали подарок
           </span>
         </div>
 
         <button
           onClick={handleCopyLink}
-          className="px-3.5 py-2.5 rounded-2xl bg-[#241920] border border-[#c4457b]/40 text-[#c4457b] text-xs font-black flex items-center gap-1.5 active-press shrink-0 hover:bg-[#c4457b] hover:text-white transition-all shadow-sm"
+          className="px-3.5 py-2.5 rounded-2xl bg-white hover:bg-zinc-200 text-black text-xs font-black flex items-center gap-1.5 active:scale-95 shrink-0 transition-all shadow-md"
         >
           {copiedLink ? <Check size={14} strokeWidth={3} /> : <Copy size={14} />}
           <span>{copiedLink ? 'Скопировано!' : 'Копировать'}</span>
@@ -366,13 +356,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       </div>
 
       {/* Bento 5: Wishlist Summary Card */}
-      <div className="p-4 rounded-3xl bg-[#17171a] border border-[#34252f] shadow-sm flex items-center gap-3">
-        <div className="w-9 h-9 rounded-2xl bg-[#241920] border border-[#c4457b]/20 flex items-center justify-center text-[#c4457b] shrink-0">
-          <Gift size={18} />
+      <div className="p-4 rounded-3xl bg-[#161618] border border-white/10 shadow-md flex items-center gap-3">
+        <div className="w-9 h-9 rounded-2xl bg-zinc-800 border border-white/10 flex items-center justify-center text-white shrink-0">
+          <Gift size={16} />
         </div>
         <div>
           <h4 className="text-xs font-black text-white">Список желаний готов</h4>
-          <p className="text-[11px] text-zinc-400 mt-0.5 leading-tight">
+          <p className="text-[11px] text-zinc-400 mt-0.5 leading-tight font-medium">
             Друзья могут бронировать подарки и скидываться. Список обновляется автоматически.
           </p>
         </div>

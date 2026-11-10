@@ -42,3 +42,4 @@
 - **[2026-11-09]** perf: optimize module imports and split bundle chunks
 - **[2026-11-10]** feat(nav): redesign BottomNavDock with Liquid Glass styling
 - **[2026-11-10]** style(motion): refine Apple Fluid Spring physics for modal sheets
+- **[2026-11-10]** feat(settings): refactor SettingsPage using Bento Grid card layout
