@@ -14,6 +14,7 @@ interface ShareModalProps {
 export const ShareModal: React.FC<ShareModalProps> = ({
   isOpen,
   user,
+  giftsCount,
   onClose,
   onHaptic,
   onShowToast,
@@ -58,22 +59,22 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const initial = (user.firstName || 'А')[0].toUpperCase()
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn select-none">
       <div
-        className="w-full max-w-md bg-surface-card dark:bg-[#17171a] rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-border-soft dark:border-[#34252f] max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-md bg-[#161618] rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto animate-apple-spring"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-border-soft dark:border-[#34252f]">
+        <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center gap-2.5">
-            <span className="p-2 rounded-xl bg-accent-rose/10 text-accent-rose">
-              <Sparkles size={18} />
+            <span className="p-2 rounded-xl bg-white/10 text-white">
+              <Sparkles size={16} />
             </span>
             <div>
-              <h2 className="text-base font-black text-ink-light dark:text-white">
+              <h2 className="text-base font-black text-white">
                 Поделиться вишлистом
               </h2>
-              <p className="text-[11px] text-ink-muted">
+              <p className="text-[11px] text-zinc-400">
                 Отправь друзьям в Telegram
               </p>
             </div>
@@ -83,49 +84,46 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               onHaptic()
               onClose()
             }}
-            className="p-1.5 rounded-full text-ink-muted hover:text-ink-light dark:hover:text-white transition-colors"
+            className="p-1.5 rounded-full text-zinc-400 hover:text-white transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Clean Apple HIG Share Preview Card (No cartoon stickers) */}
-        <div className="mt-4 p-4 rounded-2xl bg-surface-soft dark:bg-[#241920]/60 border border-border-soft dark:border-[#34252f] text-center">
-          <div className="flex flex-col items-center">
+        {/* Profile Card Preview */}
+        <div className="mt-4 p-4 rounded-2xl bg-zinc-900 border border-white/5 flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full overflow-hidden ring-1 ring-white/10 bg-zinc-800 flex items-center justify-center shrink-0">
             {user.photoUrl ? (
-              <img
-                src={user.photoUrl}
-                alt={user.firstName}
-                className="w-14 h-14 rounded-full object-cover ring-2 ring-accent-rose/40 shadow-sm"
-              />
+              <img src={user.photoUrl} alt={user.firstName} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-accent-rose to-accent-pink text-white flex items-center justify-center font-black text-xl shadow-sm">
-                {initial}
-              </div>
+              <span className="text-white font-black text-base">{initial}</span>
             )}
-
-            <h3 className="mt-2.5 text-sm font-black text-ink-light dark:text-white">
-              {user.firstName} {user.lastName || ''}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-xs sm:text-sm font-black text-white truncate">
+              Вишлист {user.firstName} {user.lastName || ''}
             </h3>
-            {user.username && (
-              <span className="text-[11px] font-semibold text-ink-muted">
-                @{user.username}
-              </span>
-            )}
-
-            {/* Clickable Invitation text formatted cleanly */}
-            <div className="mt-3 w-full p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-border-soft dark:border-zinc-800 text-xs font-bold text-ink-light dark:text-zinc-200 flex items-center justify-center gap-1.5 truncate">
-              <span>Мой вишлист 🎁 ➔</span>
-              <span className="text-[#c4457b] font-mono truncate">{shareUrl}</span>
-            </div>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              {giftsCount > 0 ? `${giftsCount} желаний в списке` : 'Список желаний готов'}
+            </p>
           </div>
         </div>
 
+        {/* Link box */}
+        <div className="mt-3.5 p-3 rounded-xl bg-zinc-900/80 border border-white/5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-1">
+            Короткая ссылка:
+          </span>
+          <p className="text-xs font-mono text-zinc-200 select-all break-all font-semibold">
+            {shareUrl}
+          </p>
+        </div>
+
         {/* Actions */}
-        <div className="mt-4 space-y-2.5">
+        <div className="mt-5 space-y-2">
           <button
             onClick={handleTelegramShare}
-            className="w-full py-3.5 rounded-full bg-sky-500 hover:bg-sky-600 text-white text-xs font-black shadow-lg shadow-sky-500/25 active-press flex items-center justify-center gap-2 transition-all"
+            className="w-full py-3.5 rounded-full bg-white hover:bg-zinc-200 text-black text-xs font-black shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             <Send size={15} />
             <span>Отправить в Telegram</span>
@@ -133,19 +131,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
           <button
             onClick={handleCopy}
-            className="w-full py-3 rounded-full bg-surface-soft dark:bg-zinc-800 border border-border-soft dark:border-zinc-700 text-ink-light dark:text-white text-xs font-bold hover:border-[#c4457b] active-press flex items-center justify-center gap-2 transition-all"
+            className="w-full py-3 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold border border-white/10 active:scale-95 transition-all flex items-center justify-center gap-2"
           >
-            {copied ? (
-              <>
-                <Check size={15} className="text-emerald-500" />
-                <span className="text-emerald-500">Скопировано!</span>
-              </>
-            ) : (
-              <>
-                <Copy size={15} />
-                <span>Скопировать ссылку</span>
-              </>
-            )}
+            {copied ? <Check size={15} /> : <Copy size={15} />}
+            <span>{copied ? 'Скопировано!' : 'Скопировать ссылку'}</span>
           </button>
         </div>
       </div>
