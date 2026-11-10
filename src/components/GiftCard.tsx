@@ -91,16 +91,16 @@ export const GiftCard: React.FC<GiftCardProps> = ({
             </button>
           )}
 
-          {/* Guest status badges over image */}
+          {/* Guest status badge on image */}
           {!isOwner && gift.isBooked && (
-            <div className="absolute inset-0 bg-ink-light/60 backdrop-blur-[2px] flex items-center justify-center p-4">
-              <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-white dark:bg-zinc-900 text-ink-light dark:text-ink-dark shadow-lg flex items-center gap-1.5 border border-border-soft dark:border-border-soft-dark text-center">
+            <div className="absolute bottom-2.5 left-2.5 right-2.5 z-10 flex justify-center">
+              <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-zinc-900/90 text-white shadow-md backdrop-blur-md flex items-center gap-1.5 border border-white/20">
                 {gift.isBookedByMe ? (
                   <>Вы дарите этот подарок 🎁</>
                 ) : (
                   <>
-                    <Lock size={12} className="text-accent-rose shrink-0" />
-                    <span>Забронировал {bookerName}</span>
+                    <Lock size={11} className="text-accent-rose shrink-0" />
+                    <span>Забронировал: <b className="text-accent-rose">{bookerName}</b></span>
                   </>
                 )}
               </span>

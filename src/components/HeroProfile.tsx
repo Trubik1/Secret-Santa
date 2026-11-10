@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { UserProfile, WishlistStats } from '../types'
 import { Calendar, Gift as GiftIcon, Sparkles, Share2, Settings } from 'lucide-react'
 import { ThemeOption } from '../utils/theme'
@@ -13,14 +13,6 @@ interface HeroProfileProps {
   onHaptic?: () => void
 }
 
-const MASCOT_MESSAGES = [
-  'Цены в ₽, Br и других валютах 🌎',
-  'Не забудь загадать желание! ✨',
-  'Праздник близко! 🎉',
-  'Подарки — это радость 💖',
-  'Ты супер! 🚀',
-]
-
 export const HeroProfile: React.FC<HeroProfileProps> = ({
   profile,
   isOwner,
@@ -30,19 +22,6 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
   onOpenSettings,
   onHaptic,
 }) => {
-  const [mascotBubble, setMascotBubble] = useState<string | null>(null)
-  const [mascotIndex, setMascotIndex] = useState(0)
-
-  const handleMascotClick = () => {
-    onHaptic?.()
-    const nextMsg = MASCOT_MESSAGES[mascotIndex % MASCOT_MESSAGES.length]
-    setMascotIndex((prev) => prev + 1)
-    setMascotBubble(nextMsg)
-    setTimeout(() => {
-      setMascotBubble(null)
-    }, 2800)
-  }
-
   // Calculate countdown days
   const countdownText = React.useMemo(() => {
     if (!profile.eventDate) return null
@@ -64,146 +43,134 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
   const [imgFailed, setImgFailed] = React.useState(false)
   const initial = (profile.firstName || 'А')[0].toUpperCase()
 
-  const cardRadius = theme?.cardRadius || 'rounded-32'
+  const cardRadius = theme?.cardRadius || 'rounded-24'
   const cardBorder = theme?.borderClass || 'border border-border-soft dark:border-border-soft-dark'
   const headingFont = theme?.headingFont || 'font-extrabold'
 
   return (
-    <div className="w-full pt-4 pb-4 px-4">
-      {/* Bento Profile Card */}
-      <div className={`relative overflow-hidden bg-surface-soft dark:bg-surface-soft-dark ${cardRadius} p-5 transition-all duration-300 ${cardBorder} shadow-subtle`}>
-        
-        {/* Decorative subtle ambient circle */}
-        <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-accent-pink/15 blur-2xl pointer-events-none" />
+    <div className="w-full pt-3 pb-2 px-4">
+      {/* Sleek, Modern Profile Banner without any blocking stickers */}
+      <div
+        className={`relative overflow-hidden bg-surface-card dark:bg-surface-card-dark ${cardRadius} p-4 sm:p-5 transition-all duration-300 ${cardBorder} shadow-card`}
+      >
+        {/* Subtle top ambient glow */}
+        <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-accent-rose/10 blur-2xl pointer-events-none" />
 
-        {/* Unibb 3D Bunny Mascot Sticker with Interactive Tap & Bubble */}
-        <div
-          onClick={handleMascotClick}
-          className="absolute -bottom-1 right-2 select-none z-20 cursor-pointer group"
-          title="Нажми на зайку!"
-        >
-          {mascotBubble && (
-            <div className="absolute -top-8 right-0 bg-white dark:bg-zinc-800 text-ink-light dark:text-ink-dark text-[11px] font-bold py-1 px-2.5 rounded-full shadow-lg border border-border-soft dark:border-border-soft-dark whitespace-nowrap animate-bounce">
-              {mascotBubble}
-            </div>
-          )}
-          <img
-            src="/stickers/bunny-hero.webp"
-            alt="Unibb Mascot"
-            className="w-18 h-18 sm:w-20 sm:h-20 object-contain drop-shadow-md group-hover:scale-110 active:scale-95 transition-transform"
-          />
-        </div>
-
-        <div className="flex items-start justify-between relative z-10">
-          <div className="flex items-center gap-3.5">
+        <div className="flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-3 min-w-0">
             {/* Avatar */}
-            <div className="relative">
+            <div className="relative shrink-0">
               {profile.photoUrl && !imgFailed ? (
                 <img
                   src={profile.photoUrl}
                   alt={profile.firstName}
-                  className="w-14 h-14 rounded-full object-cover ring-3 ring-white dark:ring-surface-card-dark shadow-md"
+                  className="w-13 h-13 rounded-full object-cover ring-2 ring-accent-rose/30 shadow-sm"
                   onError={() => setImgFailed(true)}
                 />
               ) : !imgFailed ? (
                 <img
                   src="/avatar.png"
                   alt={profile.firstName}
-                  className="w-14 h-14 rounded-full object-cover ring-3 ring-white dark:ring-surface-card-dark shadow-md bg-white dark:bg-surface-card-dark"
+                  className="w-13 h-13 rounded-full object-cover ring-2 ring-accent-rose/30 shadow-sm bg-white dark:bg-zinc-800"
                   onError={() => setImgFailed(true)}
                 />
               ) : (
-                <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-accent-rose to-accent-pink text-white flex items-center justify-center font-bold text-xl shadow-md ring-3 ring-white dark:ring-surface-card-dark">
+                <div className="w-13 h-13 rounded-full bg-gradient-to-tr from-accent-rose to-accent-pink text-white flex items-center justify-center font-bold text-lg shadow-sm">
                   {initial}
                 </div>
               )}
               {isOwner && (
                 <div className="absolute -bottom-0.5 -right-0.5 bg-white dark:bg-surface-card-dark rounded-full p-0.5 shadow-sm">
-                  <div className="w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-surface-card-dark" />
+                  <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />
                 </div>
               )}
             </div>
 
-            {/* Name & Username */}
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className={`text-lg ${headingFont} tracking-tight text-ink-light dark:text-ink-dark`}>
+            {/* Name, username & event */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <h1 className={`text-base ${headingFont} tracking-tight text-ink-light dark:text-ink-dark truncate`}>
                   {profile.firstName} {profile.lastName || ''}
                 </h1>
+                {profile.username && (
+                  <span className="text-[11px] font-semibold text-ink-muted dark:text-ink-muted-dark">
+                    @{profile.username}
+                  </span>
+                )}
               </div>
-              {profile.username && (
-                <p className="text-xs font-semibold text-accent-rose dark:text-accent-rose-dark">
-                  @{profile.username}
-                </p>
-              )}
+
+              {/* Event title & countdown badge */}
+              <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-bold text-accent-rose truncate max-w-[180px]">
+                  {profile.eventTitle || 'Мой День Рождения 🎂'}
+                </span>
+                {countdownText ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-surface-soft dark:bg-surface-soft-dark text-ink-light dark:text-ink-dark border border-border-soft/60 dark:border-border-soft-dark/60">
+                    <Calendar size={10} className="text-accent-rose" />
+                    <span>{countdownText}</span>
+                  </span>
+                ) : isOwner ? (
+                  <button
+                    onClick={() => {
+                      onHaptic?.()
+                      onOpenSettings()
+                    }}
+                    className="inline-flex items-center gap-1 text-[10px] font-bold text-ink-muted hover:text-accent-rose transition-colors"
+                  >
+                    + Указать дату
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
 
           {/* Clean Action Buttons: Share & Settings */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0 ml-2">
             <button
-              onClick={onOpenShare}
-              className="p-2.5 rounded-full bg-white/90 dark:bg-surface-card-dark/90 text-ink-muted dark:text-ink-muted-dark hover:text-accent-rose transition-colors active-press shadow-sm border border-border-soft/50 dark:border-border-soft-dark/50"
+              onClick={() => {
+                onHaptic?.()
+                onOpenShare()
+              }}
+              className="p-2.5 rounded-full bg-surface-soft dark:bg-surface-soft-dark text-ink-light dark:text-ink-dark hover:text-accent-rose transition-colors active-press shadow-sm border border-border-soft/60 dark:border-border-soft-dark/60"
               title="Поделиться вишлистом"
             >
               <Share2 size={16} />
             </button>
 
             <button
-              onClick={onOpenSettings}
-              className="p-2.5 rounded-full bg-white/90 dark:bg-surface-card-dark/90 text-ink-muted dark:text-ink-muted-dark hover:text-accent-rose transition-colors active-press shadow-sm border border-border-soft/50 dark:border-border-soft-dark/50"
-              title="Настройки (валюты, шрифты, стили)"
+              onClick={() => {
+                onHaptic?.()
+                onOpenSettings()
+              }}
+              className="p-2.5 rounded-full bg-surface-soft dark:bg-surface-soft-dark text-ink-light dark:text-ink-dark hover:text-accent-rose transition-colors active-press shadow-sm border border-border-soft/60 dark:border-border-soft-dark/60"
+              title="Настройки (валюты, стили, событие)"
             >
               <Settings size={16} />
             </button>
           </div>
         </div>
 
-        {/* Event Title & Countdown */}
-        <div className="mt-4 relative z-10">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <h2 className={`text-sm font-bold text-ink-light dark:text-ink-dark flex items-center gap-1.5`}>
-              <span>{profile.eventTitle || 'Мой День Рождения 🎂'}</span>
-            </h2>
-
-            {/* Countdown pill */}
-            {countdownText ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white dark:bg-surface-card-dark text-accent-rose dark:text-accent-rose-dark shadow-sm border border-border-soft/60 dark:border-border-soft-dark/60">
-                <Calendar size={12} />
-                {countdownText}
-              </span>
-            ) : isOwner ? (
-              <button
-                onClick={onOpenSettings}
-                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-white/70 dark:bg-surface-card-dark/70 text-ink-muted hover:text-accent-rose transition-colors"
-              >
-                <Calendar size={12} />
-                + Добавить дату
-              </button>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Stats bar */}
-        <div className="mt-3.5 pt-3 border-t border-border-soft/80 dark:border-border-soft-dark/80 flex items-center justify-between text-xs">
+        {/* Muted stats row */}
+        <div className="mt-3 pt-2.5 border-t border-border-soft/60 dark:border-border-soft-dark/60 flex items-center justify-between text-xs">
           {isOwner ? (
             <div className="w-full flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="p-1 rounded-md bg-accent-rose/10 text-accent-rose dark:text-accent-rose-dark">
-                  <GiftIcon size={13} />
-                </span>
+              <div className="flex items-center gap-1.5">
+                <GiftIcon size={13} className="text-accent-rose" />
                 <span className="font-semibold text-ink-light dark:text-ink-dark text-[11px]">
-                  Подарков: <b>{stats.totalGifts}</b> · Забронировано: <b>{stats.bookedGifts}</b>
+                  Подарков: <b>{stats.totalGifts}</b>
+                  {stats.bookedGifts > 0 && (
+                    <span className="text-accent-rose"> · Забронировано: {stats.bookedGifts}</span>
+                  )}
                 </span>
               </div>
-              <span className="text-[10px] font-bold text-accent-rose dark:text-accent-rose-dark flex items-center gap-1">
+              <span className="text-[10px] font-bold text-accent-rose flex items-center gap-1">
                 <Sparkles size={11} />
                 Сюрприз включён 🤫
               </span>
             </div>
           ) : (
-            <div className="w-full flex items-center justify-between text-ink-muted dark:text-ink-muted-dark text-[11px]">
-              <span>Выбирай подарок для друга 🎁</span>
+            <div className="w-full flex items-center justify-between text-ink-muted text-[11px]">
+              <span>Список желаний виновника торжества 🎁</span>
               <span className="font-bold text-ink-light dark:text-ink-dark">
                 {stats.totalGifts} {stats.totalGifts === 1 ? 'желание' : stats.totalGifts > 1 && stats.totalGifts < 5 ? 'желания' : 'желаний'}
               </span>

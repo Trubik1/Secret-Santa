@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { CategoryId, Gift, WishlistData } from './types'
+import { Gift, WishlistData } from './types'
 import { useTelegram } from './hooks/useTelegram'
 import {
   serverlessCall,
@@ -13,7 +13,6 @@ import { CurrencyMode } from './utils/currency'
 import { fireConfetti } from './utils/confetti'
 import { DesignTheme, THEME_OPTIONS } from './utils/theme'
 import { HeroProfile } from './components/HeroProfile'
-import { CategoryFilter } from './components/CategoryFilter'
 import { GiftCard } from './components/GiftCard'
 import { AddGiftModal } from './components/AddGiftModal'
 import { PledgeModal } from './components/PledgeModal'
@@ -22,7 +21,7 @@ import { ShareModal } from './components/ShareModal'
 import { SettingsModal } from './components/SettingsModal'
 import { StickyActionBar } from './components/StickyActionBar'
 import { DevToolsBar } from './components/DevToolsBar'
-import { Loader2, Plus, CheckCircle2, Sparkles, SlidersHorizontal } from 'lucide-react'
+import { Loader2, Plus, CheckCircle2, Sparkles } from 'lucide-react'
 
 export function App() {
   const {
@@ -38,7 +37,6 @@ export function App() {
 
   const [data, setData] = useState<WishlistData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId>('all')
 
   // Currency preference (defaults to 'both' dual RUB + BYN)
   const [currencyMode, setCurrencyMode] = useState<CurrencyMode>(() => {
@@ -131,18 +129,11 @@ export function App() {
     loadWishlist()
   }, [loadWishlist])
 
-  // Category filter
-  const handleSelectCategory = (cat: CategoryId) => {
-    haptics.selection()
-    setSelectedCategory(cat)
-  }
-
-  // Filter gifts by category
-  const filteredGifts = useMemo(() => {
+  // Gifts feed sorted cleanly by priority: Мечта -> Очень хочу -> Хочу
+  const giftsFeed = useMemo(() => {
     if (!data?.gifts) return []
-    if (selectedCategory === 'all') return data.gifts
-    return data.gifts.filter((g) => g.categoryId === selectedCategory)
-  }, [data?.gifts, selectedCategory])
+    return [...data.gifts].sort((a, b) => (b.priority || 1) - (a.priority || 1))
+  }, [data?.gifts])
 
   // Gift actions
   const handleOpenAddModal = () => {
@@ -289,7 +280,7 @@ export function App() {
       )}
 
       {/* Main Container */}
-      <main className="flex-1 max-w-md mx-auto w-full pb-28">
+      <main className="flex-1 max-w-md mx-auto w-full pb-36">
         {loading && !data ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
             <Loader2 size={36} className="animate-spin text-accent-rose" />
@@ -297,7 +288,7 @@ export function App() {
           </div>
         ) : data ? (
           <>
-            {/* Bento Hero Profile */}
+            {/* Sleek Profile Banner */}
             <HeroProfile
               profile={data.profile}
               isOwner={data.isOwner}
@@ -308,35 +299,33 @@ export function App() {
               onHaptic={() => haptics.impact('light')}
             />
 
-            {/* Clean Sticky Filter Bar */}
-            <div className="sticky top-0 z-30 bg-bg-light/90 dark:bg-bg-dark/90 backdrop-blur-md pt-1 pb-2 border-b border-border-soft/40 dark:border-border-soft-dark/40 flex items-center justify-between px-1">
-              <div className="flex-1 min-w-0">
-                <CategoryFilter
-                  selectedCategory={selectedCategory}
-                  onSelectCategory={handleSelectCategory}
-                />
+            {/* Direct Gifts Feed Header */}
+            {giftsFeed.length > 0 && (
+              <div className="px-4 pt-2 pb-1.5 flex items-center justify-between">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-ink-muted">
+                  Список желаний ({giftsFeed.length})
+                </span>
+
+                {!data.isOwner && giftsFeed.length > 2 && (
+                  <button
+                    onClick={() => {
+                      haptics.impact('light')
+                      setIsBudgetModalOpen(true)
+                    }}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-accent-rose hover:underline"
+                  >
+                    <Sparkles size={12} />
+                    <span>Подобрать по бюджету</span>
+                  </button>
+                )}
               </div>
+            )}
 
-              {/* Discreet Assistant Button for guests */}
-              {!data.isOwner && (
-                <button
-                  onClick={() => {
-                    haptics.impact('light')
-                    setIsBudgetModalOpen(true)
-                  }}
-                  className="mr-3 p-2 rounded-full bg-surface-soft dark:bg-surface-soft-dark text-accent-rose hover:bg-accent-rose/10 active-press transition-colors shrink-0 shadow-sm border border-border-soft dark:border-border-soft-dark"
-                  title="Умный помощник по бюджету"
-                >
-                  <Sparkles size={16} />
-                </button>
-              )}
-            </div>
-
-            {/* Gifts Grid */}
-            <div className="px-4 mt-3">
-              {filteredGifts.length > 0 ? (
+            {/* Unified Gifts Grid */}
+            <div className="px-4 mt-1">
+              {giftsFeed.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {filteredGifts.map((gift) => (
+                  {giftsFeed.map((gift) => (
                     <GiftCard
                       key={gift.id}
                       gift={gift}
@@ -353,38 +342,28 @@ export function App() {
                   ))}
                 </div>
               ) : (
-                /* Empty state with Unibb Bunny */
+                /* Empty state */
                 <div
                   className={`p-8 text-center bg-surface-card dark:bg-surface-card-dark ${activeTheme.cardRadius} border border-border-soft dark:border-border-soft-dark mt-4 relative overflow-hidden`}
                 >
-                  <img
-                    src="/stickers/bunny-heart.webp"
-                    alt="Empty Wishlist"
-                    className="w-24 h-24 mx-auto object-contain mb-2 drop-shadow-md"
-                  />
+                  <div className="w-16 h-16 rounded-full bg-accent-rose/10 text-accent-rose flex items-center justify-center mx-auto mb-3">
+                    <Plus size={28} />
+                  </div>
                   <h3 className={`font-extrabold text-base text-ink-light dark:text-ink-dark ${activeTheme.headingFont}`}>
-                    В этой категории пока пусто
+                    Список желаний пока пуст
                   </h3>
                   <p className="text-xs text-ink-muted mt-1 max-w-xs mx-auto">
                     {data.isOwner
-                      ? 'Добавьте первое желание, чтобы друзья знали, что подарить!'
-                      : 'В этой категории пока нет добавленных желаний.'}
+                      ? 'Добавьте первые подарки из Wildberries или Ozon, чтобы друзья знали, что подарить!'
+                      : 'Владелец пока не добавил ни одного желания.'}
                   </p>
-                  {data.isOwner ? (
+                  {data.isOwner && (
                     <button
                       onClick={handleOpenAddModal}
                       className="mt-4 px-5 py-2.5 rounded-full bg-accent-rose text-white text-xs font-extrabold inline-flex items-center gap-1.5 shadow-md shadow-accent-rose/20 active-press hover:bg-accent-rose-hover transition-all"
                     >
                       <Plus size={15} />
-                      Добавить подарок
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setSelectedCategory('all')}
-                      className="mt-4 px-4 py-2 rounded-full bg-surface-soft dark:bg-surface-soft-dark text-accent-rose text-xs font-bold inline-flex items-center gap-1 active-press"
-                    >
-                      <SlidersHorizontal size={13} />
-                      Показать все
+                      Добавить первое желание
                     </button>
                   )}
                 </div>

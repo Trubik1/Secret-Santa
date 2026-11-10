@@ -15,14 +15,14 @@ export const StickyActionBar: React.FC<StickyActionBarProps> = ({
   onCreateOwn,
 }) => {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 p-4 safe-bottom pointer-events-none">
-      <div className="max-w-md mx-auto flex items-center gap-3 pointer-events-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-40 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2.5 px-4 backdrop-blur-lg bg-bg-light/85 dark:bg-bg-dark/85 border-t border-border-soft/50 dark:border-border-soft-dark/50">
+      <div className="max-w-md mx-auto flex items-center gap-2.5">
         {isOwner ? (
           <>
-            {/* Add Gift Button */}
+            {/* Primary Add Gift Button */}
             <button
               onClick={onAddGift}
-              className="flex-1 h-13 py-3.5 px-6 rounded-full bg-accent-rose text-white text-sm font-extrabold flex items-center justify-center gap-2 shadow-xl shadow-accent-rose/30 active-press hover:bg-accent-rose-hover transition-all"
+              className="flex-1 h-12 py-3 px-5 rounded-full bg-accent-rose text-white text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-accent-rose/30 active-press hover:bg-accent-rose-hover transition-all"
             >
               <Plus size={18} strokeWidth={2.5} />
               <span>Добавить подарок</span>
@@ -31,19 +31,18 @@ export const StickyActionBar: React.FC<StickyActionBarProps> = ({
             {/* Share Wishlist Button */}
             <button
               onClick={onShare}
-              className="h-13 py-3.5 px-5 rounded-full bg-surface-card dark:bg-surface-card-dark text-ink-light dark:text-ink-dark border border-border-soft dark:border-border-soft-dark text-sm font-bold flex items-center justify-center gap-2 shadow-lg active-press hover:text-accent-rose transition-all"
+              className="h-12 w-12 rounded-full bg-surface-card dark:bg-surface-card-dark text-ink-light dark:text-ink-dark border border-border-soft dark:border-border-soft-dark flex items-center justify-center shadow-sm active-press hover:text-accent-rose transition-all shrink-0"
               title="Поделиться вишлистом"
             >
-              <Share2 size={18} />
-              <span className="hidden sm:inline">Поделиться</span>
+              <Share2 size={17} />
             </button>
           </>
         ) : (
           <button
             onClick={onCreateOwn}
-            className="w-full h-13 py-3.5 px-6 rounded-full bg-accent-rose text-white text-sm font-extrabold flex items-center justify-center gap-2 shadow-xl shadow-accent-rose/30 active-press hover:bg-accent-rose-hover transition-all"
+            className="w-full h-12 py-3 px-5 rounded-full bg-accent-rose text-white text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-accent-rose/30 active-press hover:bg-accent-rose-hover transition-all"
           >
-            <Sparkles size={18} />
+            <Sparkles size={17} />
             <span>Создать свой вишлист бесплатно</span>
           </button>
         )}

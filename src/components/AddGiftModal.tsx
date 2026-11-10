@@ -228,89 +228,70 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
             />
           </div>
 
-          {/* Price & Category Grid */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider">
-                  Цена *
-                </label>
-                <div className="flex rounded-lg bg-surface-soft dark:bg-surface-soft-dark p-0.5 border border-border-soft dark:border-border-soft-dark text-[10px] font-extrabold">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onHaptic()
-                      if (inputCurrency === 'byn' && price) {
-                        const converted = bynToRub(parseFloat(price) || 0)
-                        setPrice(converted ? String(converted) : '')
-                      }
-                      setInputCurrency('rub')
-                    }}
-                    className={`px-1.5 py-0.5 rounded transition-all ${
-                      inputCurrency === 'rub'
-                        ? 'bg-accent-rose text-white shadow-sm'
-                        : 'text-ink-muted hover:text-ink-light'
-                    }`}
-                  >
-                    ₽
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onHaptic()
-                      if (inputCurrency === 'rub' && price) {
-                        const converted = rubToByn(parseFloat(price) || 0)
-                        setPrice(converted ? String(converted) : '')
-                      }
-                      setInputCurrency('byn')
-                    }}
-                    className={`px-1.5 py-0.5 rounded transition-all ${
-                      inputCurrency === 'byn'
-                        ? 'bg-accent-rose text-white shadow-sm'
-                        : 'text-ink-muted hover:text-ink-light'
-                    }`}
-                  >
-                    Br
-                  </button>
-                </div>
-              </div>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                required
-                placeholder={inputCurrency === 'rub' ? '4 990 ₽' : '170 Br'}
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-sm text-ink-light dark:text-ink-dark placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-accent-rose font-medium"
-              />
-              {/* Converted currency hint */}
-              {parseFloat(price) > 0 && (
-                <p className="mt-1 text-[11px] font-bold text-accent-rose">
-                  ≈{' '}
-                  {inputCurrency === 'rub'
-                    ? `${formatByn(parseFloat(price), true)} (бел. руб.)`
-                    : `${formatRub(bynToRub(parseFloat(price)))}`}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider mb-1.5">
-                Категория
+          {/* Price input with live currency toggle */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider">
+                Цена подарка *
               </label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value as CategoryId)}
-                className="w-full px-3 py-2.5 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-sm text-ink-light dark:text-ink-dark focus:outline-none focus:ring-2 focus:ring-accent-rose font-medium"
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.title}
-                  </option>
-                ))}
-              </select>
+              <div className="flex rounded-lg bg-surface-soft dark:bg-surface-soft-dark p-0.5 border border-border-soft dark:border-border-soft-dark text-[10px] font-extrabold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onHaptic()
+                    if (inputCurrency === 'byn' && price) {
+                      const converted = bynToRub(parseFloat(price) || 0)
+                      setPrice(converted ? String(converted) : '')
+                    }
+                    setInputCurrency('rub')
+                  }}
+                  className={`px-2 py-0.5 rounded transition-all ${
+                    inputCurrency === 'rub'
+                      ? 'bg-accent-rose text-white shadow-sm'
+                      : 'text-ink-muted hover:text-ink-light'
+                  }`}
+                >
+                  ₽ RUB
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onHaptic()
+                    if (inputCurrency === 'rub' && price) {
+                      const converted = rubToByn(parseFloat(price) || 0)
+                      setPrice(converted ? String(converted) : '')
+                    }
+                    setInputCurrency('byn')
+                  }}
+                  className={`px-2 py-0.5 rounded transition-all ${
+                    inputCurrency === 'byn'
+                      ? 'bg-accent-rose text-white shadow-sm'
+                      : 'text-ink-muted hover:text-ink-light'
+                  }`}
+                >
+                  Br BYN
+                </button>
+              </div>
             </div>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              required
+              placeholder={inputCurrency === 'rub' ? '4 990 ₽' : '170 Br'}
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-sm text-ink-light dark:text-ink-dark placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-accent-rose font-medium"
+            />
+            {/* Converted currency hint */}
+            {parseFloat(price) > 0 && (
+              <p className="mt-1 text-[11px] font-bold text-accent-rose">
+                ≈{' '}
+                {inputCurrency === 'rub'
+                  ? `${formatByn(parseFloat(price), true)} (бел. руб.)`
+                  : `${formatRub(bynToRub(parseFloat(price)))}`}
+              </p>
+            )}
           </div>
 
           {/* Image URL preview */}
