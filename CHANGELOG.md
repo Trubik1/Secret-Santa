@@ -55,3 +55,4 @@
 - **[2026-11-10]** feat(db): add index on user_id in gifts and pledges tables
 - **[2026-11-10]** fix(image): handle image load errors with graceful gift placeholder
 - **[2026-11-10]** feat(bot): add notifications helper for automated Telegram messages
+- **[2026-11-10]** feat(bot): sanitize and escape HTML tags in bot message templates
