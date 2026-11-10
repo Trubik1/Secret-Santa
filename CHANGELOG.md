@@ -45,3 +45,4 @@
 - **[2026-11-10]** feat(settings): refactor SettingsPage using Bento Grid card layout
 - **[2026-11-10]** feat(settings): add live currency switcher with instant preview
 - **[2026-11-10]** fix(card): prevent priority tag text wrapping in price row
+- **[2026-11-10]** style: standardize Studio Minimal OLED theme across all screens
