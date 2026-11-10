@@ -44,3 +44,4 @@
 - **[2026-11-10]** style(motion): refine Apple Fluid Spring physics for modal sheets
 - **[2026-11-10]** feat(settings): refactor SettingsPage using Bento Grid card layout
 - **[2026-11-10]** feat(settings): add live currency switcher with instant preview
+- **[2026-11-10]** fix(card): prevent priority tag text wrapping in price row
