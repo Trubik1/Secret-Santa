@@ -81,9 +81,9 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
                 )}
               </div>
 
-              {/* Event title & countdown badge (only if set) */}
+              {/* Event title & countdown badge (only if explicitly set by user) */}
               <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
-                {profile.eventTitle ? (
+                {profile.eventTitle && profile.eventTitle !== 'Мой День Рождения' && profile.eventTitle !== 'Мой День Рождения 🎂' ? (
                   <span className="text-xs font-bold text-accent-rose truncate max-w-[200px]">
                     {profile.eventTitle}
                   </span>

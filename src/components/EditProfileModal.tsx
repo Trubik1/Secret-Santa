@@ -17,7 +17,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   onSave,
   onHaptic,
 }) => {
-  const [eventTitle, setEventTitle] = useState(profile.eventTitle || 'Мой День Рождения 🎂')
+  const [eventTitle, setEventTitle] = useState(profile.eventTitle || '')
   const [eventDate, setEventDate] = useState(profile.eventDate || '')
   const [isSubmitting, setIsSubmitting] = useState(false)
 

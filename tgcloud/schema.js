@@ -7,7 +7,7 @@ export const users = table('users', {
   lastName: text('last_name'),
   username: text('username'),
   photoUrl: text('photo_url'),
-  eventTitle: text('event_title').default('Мой День Рождения'),
+  eventTitle: text('event_title').default(''),
   eventDate: text('event_date'), // YYYY-MM-DD
   createdAt: text('created_at').default(sql`(datetime('now'))`),
 })

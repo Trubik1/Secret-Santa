@@ -22,7 +22,7 @@ export default async function (input, ctx) {
         lastName: caller.last_name || null,
         username: caller.username || null,
         photoUrl: caller.photo_url || null,
-        eventTitle: 'Мой День Рождения 🎂',
+        eventTitle: '',
         eventDate: null,
       }
       await db.insert(users).values(newUser).run()
@@ -149,6 +149,9 @@ export default async function (input, ctx) {
     }
   })
 
+  const rawTitle = profile.eventTitle || ''
+  const cleanEventTitle = (rawTitle === 'Мой День Рождения' || rawTitle === 'Мой День Рождения 🎂') ? '' : rawTitle
+
   return {
     profile: {
       id: profile.id,
@@ -156,7 +159,7 @@ export default async function (input, ctx) {
       lastName: profile.lastName,
       username: profile.username,
       photoUrl: profile.photoUrl,
-      eventTitle: profile.eventTitle || '',
+      eventTitle: cleanEventTitle,
       eventDate: profile.eventDate,
     },
     isOwner,
