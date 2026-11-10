@@ -10,13 +10,27 @@ declare global {
 
 export function useTelegram() {
   const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined
-  const [colorScheme, setColorScheme] = useState<'light' | 'dark'>(() => {
+
+  // 1. Always prioritize persistent user preference in localStorage
+  const [colorScheme, setColorSchemeState] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = localStorage.getItem('wishlist_color_scheme') as 'light' | 'dark'
+      if (saved === 'light' || saved === 'dark') return saved
+    } catch (_) {}
+
     if (tg?.colorScheme) return tg.colorScheme
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark'
     }
-    return 'light'
+    return 'dark'
   })
+
+  const setColorScheme = (scheme: 'light' | 'dark') => {
+    setColorSchemeState(scheme)
+    try {
+      localStorage.setItem('wishlist_color_scheme', scheme)
+    } catch (_) {}
+  }
 
   useEffect(() => {
     if (!tg) return
@@ -25,9 +39,13 @@ export function useTelegram() {
     tg.expand()
 
     const onThemeChange = () => {
-      if (tg.colorScheme) {
-        setColorScheme(tg.colorScheme)
-      }
+      // Only adopt telegram theme if user has never manually toggled it in localStorage
+      try {
+        const saved = localStorage.getItem('wishlist_color_scheme')
+        if (!saved && tg.colorScheme) {
+          setColorSchemeState(tg.colorScheme)
+        }
+      } catch (_) {}
     }
 
     tg.onEvent?.('themeChanged', onThemeChange)
@@ -37,7 +55,7 @@ export function useTelegram() {
   }, [tg])
 
   useEffect(() => {
-    // Sync dark class on document element
+    // Sync dark class on document element immediately
     if (colorScheme === 'dark') {
       document.documentElement.classList.add('dark')
     } else {

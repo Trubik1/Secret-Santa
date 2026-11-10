@@ -1,11 +1,10 @@
 import React from 'react'
-import { UserProfile, WishlistStats } from '../types'
-import { Calendar, Gift as GiftIcon, Share2, Settings } from 'lucide-react'
+import { UserProfile } from '../types'
+import { Calendar, Share2, Settings } from 'lucide-react'
 
 interface HeroProfileProps {
   profile: UserProfile
   isOwner: boolean
-  stats: WishlistStats
   onOpenShare: () => void
   onOpenSettings: () => void
   onHaptic?: () => void
@@ -14,7 +13,6 @@ interface HeroProfileProps {
 export const HeroProfile: React.FC<HeroProfileProps> = ({
   profile,
   isOwner,
-  stats,
   onOpenShare,
   onOpenSettings,
   onHaptic,
@@ -124,30 +122,6 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
               <Settings size={16} />
             </button>
           </div>
-        </div>
-
-        {/* Clean stats row (Zero booking leaks to creator) */}
-        <div className="mt-3 pt-2.5 border-t border-border-soft/60 dark:border-[#34252f] flex items-center justify-between text-xs">
-          {isOwner ? (
-            <div className="w-full flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <GiftIcon size={13} className="text-accent-rose" />
-                <span className="font-semibold text-ink-light dark:text-ink-dark text-[11px]">
-                  Желаний в списке: <b>{stats.totalGifts}</b>
-                </span>
-              </div>
-              <span className="text-[11px] font-bold text-ink-muted">
-                Мой список
-              </span>
-            </div>
-          ) : (
-            <div className="w-full flex items-center justify-between text-ink-muted text-[11px]">
-              <span>Список желаний друга 🎁</span>
-              <span className="font-bold text-ink-light dark:text-ink-dark">
-                {stats.totalGifts} {stats.totalGifts === 1 ? 'желание' : stats.totalGifts > 1 && stats.totalGifts < 5 ? 'желания' : 'желаний'}
-              </span>
-            </div>
-          )}
         </div>
       </div>
     </div>

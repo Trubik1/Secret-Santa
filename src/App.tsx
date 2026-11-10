@@ -19,9 +19,11 @@ import { PledgeModal } from './components/PledgeModal'
 import { BudgetHelperModal } from './components/BudgetHelperModal'
 import { ShareModal } from './components/ShareModal'
 import { SettingsModal } from './components/SettingsModal'
-import { StickyActionBar } from './components/StickyActionBar'
+import { BottomNavDock, NavTabType } from './components/BottomNavDock'
+import { FriendsWishlistPage } from './components/FriendsWishlistPage'
+import { SecretSantaPage } from './components/SecretSantaPage'
 import { DevToolsBar } from './components/DevToolsBar'
-import { Loader2, Plus, CheckCircle2, Sparkles } from 'lucide-react'
+import { Plus, CheckCircle2, Sparkles } from 'lucide-react'
 
 export function App() {
   const {
@@ -37,6 +39,12 @@ export function App() {
 
   const [data, setData] = useState<WishlistData | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // Navigation tab state (my | friends | santa | settings)
+  const [currentNavTab, setCurrentNavTab] = useState<NavTabType>('my')
+
+  // Selected friend's owner ID (if viewing friend's wishlist from Friends tab)
+  const [targetFriendId, setTargetFriendId] = useState<number | null>(null)
 
   // Single Currency Preference (defaults to 'byn')
   const [currencyMode, setCurrencyMode] = useState<CurrencyMode>(() => {
@@ -74,8 +82,10 @@ export function App() {
     } catch (_) {}
   }
 
-  // Determine target owner ID from start_param or caller
-  const targetOwnerId = useMemo(() => {
+  // Determine target owner ID: friend override > startParam > user
+  const effectiveOwnerId = useMemo(() => {
+    if (targetFriendId) return targetFriendId
+
     if (startParam && startParam.startsWith('wish_')) {
       const parsedId = parseInt(startParam.replace('wish_', ''), 10)
       if (!isNaN(parsedId)) return parsedId
@@ -89,13 +99,13 @@ export function App() {
       }
     }
     return user?.id || null
-  }, [startParam, user])
+  }, [targetFriendId, startParam, user])
 
   // Load wishlist data from serverless
   const loadWishlist = useCallback(async () => {
     try {
       setLoading(true)
-      const input = targetOwnerId ? { ownerId: targetOwnerId } : {}
+      const input = effectiveOwnerId ? { ownerId: effectiveOwnerId } : {}
       const res = await serverlessCall<WishlistData>('getWishlist', input)
       setData(res)
     } catch (err: any) {
@@ -104,7 +114,7 @@ export function App() {
     } finally {
       setLoading(false)
     }
-  }, [targetOwnerId, showToast])
+  }, [effectiveOwnerId, showToast])
 
   useEffect(() => {
     loadWishlist()
@@ -208,19 +218,13 @@ export function App() {
   const handleSaveProfile = async (eventTitle: string, eventDate: string | null) => {
     await serverlessCall('updateProfile', { eventTitle, eventDate })
     haptics.notification('success')
-    showToast('Настройки вишлиста сохранены ✨')
+    showToast('Настройки сохранены ✨')
     await loadWishlist()
   }
 
   const handleShareWishlist = () => {
     haptics.impact('medium')
     setIsShareModalOpen(true)
-  }
-
-  const handleCreateOwn = () => {
-    haptics.impact('medium')
-    const botUsername = import.meta.env.VITE_BOT_USERNAME || 'yamload_bot'
-    openTelegramLink(`https://t.me/${botUsername}?start=start`)
   }
 
   // Dev bar handlers
@@ -244,6 +248,14 @@ export function App() {
     setSelectedGiftDetail(gift)
   }
 
+  const handleNavTabChange = (tab: NavTabType) => {
+    if (tab === 'settings') {
+      setIsSettingsModalOpen(true)
+    } else {
+      setCurrentNavTab(tab)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-ink-light dark:text-ink-dark flex flex-col font-inter selection:bg-surface-soft selection:text-accent-rose overflow-x-hidden">
       {/* Dev Tools Bar in standalone browser only */}
@@ -257,103 +269,157 @@ export function App() {
         />
       )}
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-md mx-auto w-full pb-36 overflow-x-hidden">
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-md mx-auto w-full pb-24 overflow-x-hidden">
         {loading && !data ? (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-            <Loader2 size={36} className="animate-spin text-accent-rose" />
-            <p className="text-xs font-bold text-ink-muted">Загрузка вишлиста...</p>
+          /* Liquid Glass Orb Loader */
+          <div className="flex flex-col items-center justify-center min-h-[65vh] gap-4">
+            <div className="relative w-14 h-14 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-2 border-[#c4457b]/20 border-t-[#c4457b] animate-spin" />
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#c4457b] to-[#d98aab] opacity-80 blur-sm animate-pulse" />
+              <span className="text-sm font-black text-white relative z-10">🎁</span>
+            </div>
+            <p className="text-xs font-black uppercase tracking-wider text-ink-muted">
+              Загрузка вишлиста...
+            </p>
           </div>
-        ) : data ? (
+        ) : (
           <>
-            {/* Sleek Profile Banner */}
-            <HeroProfile
-              profile={data.profile}
-              isOwner={data.isOwner}
-              stats={data.stats}
-              onOpenShare={handleShareWishlist}
-              onOpenSettings={() => setIsSettingsModalOpen(true)}
-              onHaptic={() => haptics.impact('light')}
-            />
-
-            {/* Direct Gifts Feed Header */}
-            {giftsFeed.length > 0 && (
-              <div className="px-4 pt-2.5 pb-1.5 flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-ink-muted">
-                  Желания ({giftsFeed.length})
-                </span>
-
-                {!data.isOwner && giftsFeed.length > 2 && (
-                  <button
-                    onClick={() => {
-                      haptics.impact('light')
-                      setIsBudgetModalOpen(true)
-                    }}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-accent-rose hover:underline"
-                  >
-                    <Sparkles size={12} />
-                    <span>Подобрать по бюджету</span>
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* CONCEPT 1: APPLE BOUTIQUE 2-COLUMN MINIMALIST GRID */}
-            <div className="px-4 mt-1">
-              {giftsFeed.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {giftsFeed.map((gift) => (
-                    <GiftCard
-                      key={gift.id}
-                      gift={gift}
-                      isOwner={data.isOwner}
-                      currencyMode={currencyMode}
-                      onSelect={(g) => setSelectedGiftDetail(g)}
-                      onHaptic={() => haptics.impact('light')}
-                    />
-                  ))}
-                </div>
-              ) : (
-                /* Clean Empty state */
-                <div className="p-8 text-center bg-surface-card dark:bg-[#17171a] rounded-3xl border border-border-soft dark:border-[#34252f] mt-4 relative overflow-hidden">
-                  <div className="w-16 h-16 rounded-full bg-accent-rose/10 text-accent-rose flex items-center justify-center mx-auto mb-3">
-                    <Plus size={28} />
-                  </div>
-                  <h3 className="font-black text-base text-ink-light dark:text-ink-dark">
-                    Список желаний пока пуст
-                  </h3>
-                  <p className="text-xs text-ink-muted mt-1 max-w-xs mx-auto">
-                    {data.isOwner
-                      ? 'Добавьте первые подарки из Wildberries или Ozon, чтобы друзья знали, что подарить!'
-                      : 'Владелец пока не добавил ни одного желания.'}
-                  </p>
-                  {data.isOwner && (
+            {/* VIEW 1: MY WISHLIST */}
+            {currentNavTab === 'my' && data && (
+              <>
+                {/* Back to my own wishlist banner if viewing a friend */}
+                {targetFriendId && (
+                  <div className="px-4 pt-2">
                     <button
-                      onClick={handleOpenAddModal}
-                      className="mt-4 px-5 py-2.5 rounded-full bg-accent-rose text-white text-xs font-black inline-flex items-center gap-1.5 shadow-md shadow-accent-rose/20 active-press hover:bg-accent-rose-hover transition-all"
+                      onClick={() => {
+                        haptics.impact('light')
+                        setTargetFriendId(null)
+                      }}
+                      className="w-full py-2 px-3 rounded-xl bg-surface-soft dark:bg-[#241920] border border-border-soft dark:border-[#34252f] text-xs font-bold text-[#c4457b] flex items-center justify-between"
                     >
-                      <Plus size={15} />
-                      Добавить первое желание
+                      <span>← Вернуться в мой личный вишлист</span>
+                      <span>✕</span>
                     </button>
+                  </div>
+                )}
+
+                {/* Profile Banner */}
+                <HeroProfile
+                  profile={data.profile}
+                  isOwner={data.isOwner}
+                  onOpenShare={handleShareWishlist}
+                  onOpenSettings={() => setIsSettingsModalOpen(true)}
+                  onHaptic={() => haptics.impact('light')}
+                />
+
+                {/* Direct Gifts Feed Header with Add Button */}
+                <div className="px-4 pt-2.5 pb-2 flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-ink-muted">
+                    Желания ({giftsFeed.length})
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    {!data.isOwner && giftsFeed.length > 2 && (
+                      <button
+                        onClick={() => {
+                          haptics.impact('light')
+                          setIsBudgetModalOpen(true)
+                        }}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-accent-rose hover:underline"
+                      >
+                        <Sparkles size={12} />
+                        <span>Подобрать</span>
+                      </button>
+                    )}
+
+                    {data.isOwner && (
+                      <button
+                        onClick={handleOpenAddModal}
+                        className="px-3 py-1 rounded-full bg-[#c4457b] hover:bg-[#b03b6d] text-white text-[11px] font-black active-press shadow-sm flex items-center gap-1"
+                      >
+                        <Plus size={13} strokeWidth={3} />
+                        <span>Добавить</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2-COLUMN APPLE BOUTIQUE GRID */}
+                <div className="px-4 mt-1">
+                  {giftsFeed.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {giftsFeed.map((gift) => (
+                        <GiftCard
+                          key={gift.id}
+                          gift={gift}
+                          isOwner={data.isOwner}
+                          currencyMode={currencyMode}
+                          onSelect={(g) => setSelectedGiftDetail(g)}
+                          onHaptic={() => haptics.impact('light')}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    /* Clean Empty state */
+                    <div className="p-8 text-center bg-surface-card dark:bg-[#17171a] rounded-3xl border border-border-soft dark:border-[#34252f] mt-4 relative overflow-hidden">
+                      <div className="w-16 h-16 rounded-full bg-accent-rose/10 text-accent-rose flex items-center justify-center mx-auto mb-3">
+                        <Plus size={28} />
+                      </div>
+                      <h3 className="font-black text-base text-ink-light dark:text-ink-dark">
+                        Список желаний пока пуст
+                      </h3>
+                      <p className="text-xs text-ink-muted mt-1 max-w-xs mx-auto">
+                        {data.isOwner
+                          ? 'Добавьте первые подарки из Wildberries или Ozon, чтобы друзья знали, что подарить!'
+                          : 'Владелец пока не добавил ни одного желания.'}
+                      </p>
+                      {data.isOwner && (
+                        <button
+                          onClick={handleOpenAddModal}
+                          className="mt-4 px-5 py-2.5 rounded-full bg-accent-rose text-white text-xs font-black inline-flex items-center gap-1.5 shadow-md shadow-accent-rose/20 active-press hover:bg-accent-rose-hover transition-all"
+                        >
+                          <Plus size={15} />
+                          Добавить первое желание
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
+
+            {/* VIEW 2: FRIENDS' WISHLISTS */}
+            {currentNavTab === 'friends' && (
+              <FriendsWishlistPage
+                onOpenFriendWishlist={(friendId) => {
+                  setTargetFriendId(friendId)
+                  setCurrentNavTab('my')
+                }}
+                onHaptic={() => haptics.impact('light')}
+                onShowToast={showToast}
+              />
+            )}
+
+            {/* VIEW 3: SECRET SANTA (IN DEVELOPMENT) */}
+            {currentNavTab === 'santa' && (
+              <SecretSantaPage
+                onBackToWishlist={() => setCurrentNavTab('my')}
+                onHaptic={() => haptics.impact('light')}
+              />
+            )}
           </>
-        ) : null}
+        )}
       </main>
 
-      {/* Sticky Bottom Action Bar */}
-      {data && (
-        <StickyActionBar
-          isOwner={data.isOwner}
-          onAddGift={handleOpenAddModal}
-          onShare={handleShareWishlist}
-          onCreateOwn={handleCreateOwn}
-        />
-      )}
+      {/* Liquid Glass Floating Navigation Dock */}
+      <BottomNavDock
+        activeTab={currentNavTab}
+        onChangeTab={handleNavTabChange}
+        onHaptic={() => haptics.impact('light')}
+      />
 
-      {/* Pop-up Gift Detail Modal (Bottom Sheet on Card Tap) */}
+      {/* Pop-up Gift Detail Modal (Apple Fluid Spring & Drag to Dismiss) */}
       <GiftDetailModal
         gift={selectedGiftDetail}
         isOwner={data?.isOwner ?? false}
