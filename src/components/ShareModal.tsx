@@ -22,7 +22,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   if (!isOpen) return null
 
-  const botUsername = 'yamload_bot'
+  const botUsername = 'giftly_me_bot'
   const shareUrl = `https://t.me/${botUsername}?start=wish_${user.id}`
   const shareText = `Мой вишлист 🎁 ➔ ${shareUrl}`
 

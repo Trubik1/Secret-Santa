@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Liquid Glass Squircle Gradient -->
+    <linearGradient id="squircleBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f1820" />
+      <stop offset="50%" stop-color="#141116" />
+      <stop offset="100%" stop-color="#0b0a0c" />
+    </linearGradient>
+
+    <!-- Frosted Bevel Border Gradient -->
+    <linearGradient id="bevelBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35" />
+      <stop offset="40%" stop-color="#e26197" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.08" />
+    </linearGradient>
+
+    <!-- Shiny Rose Gold Ribbon -->
+    <linearGradient id="roseRibbon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd5e5" />
+      <stop offset="30%" stop-color="#e26197" />
+      <stop offset="70%" stop-color="#c4457b" />
+      <stop offset="100%" stop-color="#731f43" />
+    </linearGradient>
+
+    <!-- Inner Shadow -->
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Deep Background -->
+  <rect width="512" height="512" fill="#070608" />
+
+  <!-- Apple iOS Style Squircle Icon -->
+  <rect x="36" y="36" width="440" height="440" rx="100" fill="url(#squircleBg)" stroke="url(#bevelBorder)" stroke-width="4" filter="drop-shadow(0 20px 40px rgba(0,0,0,0.8))" />
+
+  <!-- Background Ambient Color Bloom -->
+  <circle cx="256" cy="256" r="130" fill="#c4457b" opacity="0.25" filter="blur(50px)" />
+
+  <!-- Stylized G-Monogram / Gift Emblem in the center -->
+  <g transform="translate(0, 0)">
+    <!-- Base Gift Box -->
+    <rect x="156" y="210" width="200" height="170" rx="28" fill="#1b151d" stroke="#e26197" stroke-width="2.5" stroke-opacity="0.4" />
+    
+    <!-- Box Lid -->
+    <rect x="141" y="180" width="230" height="42" rx="14" fill="#291b25" stroke="#e26197" stroke-width="2.5" stroke-opacity="0.6" />
+
+    <!-- Vertical Ribbon -->
+    <rect x="238" y="180" width="36" height="200" fill="url(#roseRibbon)" filter="drop-shadow(0 0 10px rgba(226,97,151,0.5))" />
+
+    <!-- Ribbon Bow (Infinity Loop) -->
+    <path d="M 256,180 C 205,100 135,130 180,180 C 220,180 245,180 256,180 Z" fill="url(#roseRibbon)" filter="url(#softGlow)" />
+    <path d="M 256,180 C 307,100 377,130 332,180 C 292,180 267,180 256,180 Z" fill="url(#roseRibbon)" filter="url(#softGlow)" />
+    
+    <!-- Central Ribbon Knot Button -->
+    <circle cx="256" cy="180" r="16" fill="#ffe0ec" filter="drop-shadow(0 2px 8px rgba(0,0,0,0.5))" />
+    <circle cx="256" cy="180" r="8" fill="#c4457b" />
+  </g>
+
+  <!-- Sparkle Stars -->
+  <polygon points="120,120 125,100 130,120 150,125 130,130 125,150 120,130 100,125" fill="#ff7eb3" opacity="0.8" />
+  <polygon points="390,360 394,345 398,360 413,364 398,368 394,383 390,368 375,364" fill="#ffd1e3" opacity="0.7" />
+</svg>

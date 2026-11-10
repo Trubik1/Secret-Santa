@@ -97,7 +97,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
   const handleCopyLink = () => {
     onHaptic()
-    const url = `https://t.me/yamload_bot?start=wish_${profile.id}`
+    const url = `https://t.me/giftly_me_bot?start=wish_${profile.id}`
     navigator.clipboard?.writeText?.(url)
     setCopiedLink(true)
     onShowToast('Ссылка скопирована в буфер 🔗')
@@ -349,7 +349,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             Ссылка на вишлист
           </span>
           <p className="text-xs text-white font-bold truncate mt-0.5">
-            t.me/yamload_bot?start=wish_{profile.id}
+            t.me/giftly_me_bot?start=wish_{profile.id}
           </p>
           <span className="text-[10px] text-zinc-400 block mt-0.5">
             Отправьте друзьям, чтобы они выбрали подарок

@@ -55,7 +55,7 @@ export const FriendsWishlistPage: React.FC<FriendsWishlistPageProps> = ({
     }
 
     if (!targetId) {
-      onShowToast('Введите ссылку на вишлист вида t.me/yamload_bot?start=wish_123')
+      onShowToast('Введите ссылку на вишлист вида t.me/giftly_me_bot?start=wish_123')
       return
     }
 
@@ -122,7 +122,7 @@ export const FriendsWishlistPage: React.FC<FriendsWishlistPageProps> = ({
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="t.me/yamload_bot?start=wish_123"
+            placeholder="t.me/giftly_me_bot?start=wish_123"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="flex-1 px-3.5 py-2.5 rounded-xl bg-surface-soft dark:bg-zinc-800 border border-border-soft dark:border-zinc-700 text-xs font-semibold text-ink-light dark:text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c4457b]"
