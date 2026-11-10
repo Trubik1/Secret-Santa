@@ -56,3 +56,4 @@
 - **[2026-11-10]** fix(image): handle image load errors with graceful gift placeholder
 - **[2026-11-10]** feat(bot): add notifications helper for automated Telegram messages
 - **[2026-11-10]** feat(bot): sanitize and escape HTML tags in bot message templates
+- **[2026-11-10]** refactor(styles): clean up tailwind color tokens and typography scale
