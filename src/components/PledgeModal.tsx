@@ -221,7 +221,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || !amount || parseInt(amount, 10) <= 0}
-              className="w-full h-13 py-3.5 rounded-full bg-accent-rose text-white text-sm font-extrabold active-press shadow-lg shadow-accent-rose/25 hover:bg-accent-rose-hover transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full h-12 py-3 rounded-full bg-accent-rose text-white text-sm font-extrabold active-press shadow-lg shadow-accent-rose/25 hover:bg-accent-rose-hover transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <Loader2 size={18} className="animate-spin" />

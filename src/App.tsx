@@ -266,7 +266,7 @@ export function App() {
 
   return (
     <div
-      className={`min-h-screen bg-bg-light dark:bg-bg-dark text-ink-light dark:text-ink-dark flex flex-col ${activeTheme.fontClass} selection:bg-surface-soft selection:text-accent-rose`}
+      className={`min-h-screen bg-bg-light dark:bg-bg-dark text-ink-light dark:text-ink-dark flex flex-col ${activeTheme.fontClass} selection:bg-surface-soft selection:text-accent-rose overflow-x-hidden`}
     >
       {/* Dev Tools Bar in standalone browser only */}
       {!isTelegramServerlessAvailable() && !isInsideTelegram && (
@@ -280,7 +280,7 @@ export function App() {
       )}
 
       {/* Main Container */}
-      <main className="flex-1 max-w-md mx-auto w-full pb-36">
+      <main className="flex-1 max-w-md mx-auto w-full pb-36 overflow-x-hidden">
         {loading && !data ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
             <Loader2 size={36} className="animate-spin text-accent-rose" />

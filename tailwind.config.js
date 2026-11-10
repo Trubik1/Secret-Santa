@@ -39,6 +39,9 @@ export default {
         '28': '28px',
         '32': '32px',
       },
+      spacing: {
+        '13': '3.25rem',
+      },
       fontFamily: {
         inter: ['Inter', 'system-ui', 'sans-serif'],
         editorial: ['"Playfair Display"', 'Georgia', 'serif'],

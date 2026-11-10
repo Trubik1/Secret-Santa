@@ -60,25 +60,27 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
           <div className="flex items-center gap-3 min-w-0">
             {/* Avatar */}
             <div className="relative shrink-0">
-              {profile.photoUrl && !imgFailed ? (
-                <img
-                  src={profile.photoUrl}
-                  alt={profile.firstName}
-                  className="w-13 h-13 rounded-full object-cover ring-2 ring-accent-rose/30 shadow-sm"
-                  onError={() => setImgFailed(true)}
-                />
-              ) : !imgFailed ? (
-                <img
-                  src="/avatar.png"
-                  alt={profile.firstName}
-                  className="w-13 h-13 rounded-full object-cover ring-2 ring-accent-rose/30 shadow-sm bg-white dark:bg-zinc-800"
-                  onError={() => setImgFailed(true)}
-                />
-              ) : (
-                <div className="w-13 h-13 rounded-full bg-gradient-to-tr from-accent-rose to-accent-pink text-white flex items-center justify-center font-bold text-lg shadow-sm">
-                  {initial}
-                </div>
-              )}
+              <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-accent-rose/30 shadow-sm bg-surface-soft dark:bg-zinc-800 flex items-center justify-center">
+                {profile.photoUrl && !imgFailed ? (
+                  <img
+                    src={profile.photoUrl}
+                    alt={profile.firstName}
+                    className="w-full h-full object-cover"
+                    onError={() => setImgFailed(true)}
+                  />
+                ) : !imgFailed ? (
+                  <img
+                    src="/avatar.png"
+                    alt={profile.firstName}
+                    className="w-full h-full object-cover"
+                    onError={() => setImgFailed(true)}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-tr from-accent-rose to-accent-pink text-white flex items-center justify-center font-bold text-lg">
+                    {initial}
+                  </div>
+                )}
+              </div>
               {isOwner && (
                 <div className="absolute -bottom-0.5 -right-0.5 bg-white dark:bg-surface-card-dark rounded-full p-0.5 shadow-sm">
                   <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />

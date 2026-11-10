@@ -380,7 +380,7 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
                   onHaptic()
                   setIsCrowdfund(!isCrowdfund)
                 }}
-                className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none ${
+                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none ${
                   isCrowdfund
                     ? 'bg-accent-rose shadow-md shadow-accent-rose/30'
                     : 'bg-zinc-300 dark:bg-zinc-700'
@@ -388,7 +388,7 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
               >
                 <span
                   className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                    isCrowdfund ? 'translate-x-6' : 'translate-x-0'
+                    isCrowdfund ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
               </button>
@@ -407,7 +407,7 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || !title.trim()}
-              className="w-full h-13 py-3.5 rounded-full bg-accent-rose text-white text-sm font-extrabold active-press shadow-lg shadow-accent-rose/25 hover:bg-accent-rose-hover transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full h-12 py-3 rounded-full bg-accent-rose text-white text-sm font-extrabold active-press shadow-lg shadow-accent-rose/25 hover:bg-accent-rose-hover transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <Loader2 size={18} className="animate-spin" />
