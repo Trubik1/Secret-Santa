@@ -43,6 +43,8 @@ export interface Gift {
   // Viewer-specific fields:
   isBooked: boolean
   isBookedByMe?: boolean
+  bookedByName?: string | null
+  bookedByUsername?: string | null
   totalPledged?: number
   pledgesCount?: number
   myPledgedAmount?: number

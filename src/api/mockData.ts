@@ -48,6 +48,8 @@ export const INITIAL_MOCK_GIFTS: Gift[] = [
     targetAmount: 0,
     createdAt: new Date().toISOString(),
     isBooked: true,
+    bookedByName: 'Алексей',
+    bookedByUsername: 'alex_tg',
     totalPledged: 0,
     pledgesCount: 0,
     pledges: [],

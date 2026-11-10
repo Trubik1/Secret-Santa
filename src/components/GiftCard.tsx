@@ -1,12 +1,14 @@
 import React from 'react'
 import { Gift } from '../types'
-import { ExternalLink, Edit3, Trash2, Users, Check, Gift as GiftIcon } from 'lucide-react'
+import { ExternalLink, Edit3, Trash2, Users, Check, Gift as GiftIcon, Lock } from 'lucide-react'
 import { CurrencyMode, formatDualPrice } from '../utils/currency'
+import { ThemeOption } from '../utils/theme'
 
 interface GiftCardProps {
   gift: Gift
   isOwner: boolean
   currencyMode?: CurrencyMode
+  theme?: ThemeOption
   onBook: (gift: Gift) => void
   onUnbook: (gift: Gift) => void
   onPledge: (gift: Gift) => void
@@ -19,6 +21,7 @@ export const GiftCard: React.FC<GiftCardProps> = ({
   gift,
   isOwner,
   currencyMode = 'both',
+  theme,
   onBook,
   onUnbook,
   onPledge,
@@ -30,6 +33,8 @@ export const GiftCard: React.FC<GiftCardProps> = ({
   const targetPrice = gift.targetAmount > 0 ? gift.targetAmount : gift.price
   const currentPledged = gift.totalPledged || 0
   const progressPercent = targetPrice > 0 ? Math.min(100, Math.round((currentPledged / targetPrice) * 100)) : 0
+
+  const bookerName = gift.bookedByUsername ? `@${gift.bookedByUsername}` : gift.bookedByName || 'гость'
 
   // Priority labels
   const priorityBadge = React.useMemo(() => {
@@ -43,8 +48,12 @@ export const GiftCard: React.FC<GiftCardProps> = ({
     }
   }, [gift.priority])
 
+  const cardRadius = theme?.cardRadius || 'rounded-28'
+  const cardBorder = theme?.borderClass || 'border border-border-soft/60 dark:border-border-soft-dark/60'
+  const headingFont = theme?.headingFont || 'font-bold'
+
   return (
-    <div className="bg-surface-card dark:bg-surface-card-dark rounded-28 overflow-hidden border border-border-soft/60 dark:border-border-soft-dark/60 shadow-card flex flex-col justify-between transition-all duration-200 hover:shadow-subtle">
+    <div className={`bg-surface-card dark:bg-surface-card-dark ${cardRadius} overflow-hidden ${cardBorder} shadow-card flex flex-col justify-between transition-all duration-200 hover:shadow-subtle`}>
       {/* Top Media & Badges */}
       <div>
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface-soft dark:bg-surface-soft-dark">
@@ -85,8 +94,15 @@ export const GiftCard: React.FC<GiftCardProps> = ({
           {/* Guest status badges over image */}
           {!isOwner && gift.isBooked && (
             <div className="absolute inset-0 bg-ink-light/60 backdrop-blur-[2px] flex items-center justify-center p-4">
-              <span className="px-4 py-2 rounded-full text-xs font-bold bg-white text-ink-light shadow-lg flex items-center gap-1.5">
-                {gift.isBookedByMe ? 'Вы дарите этот подарок 🎁' : 'Уже забронирован 🔒'}
+              <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-white dark:bg-zinc-900 text-ink-light dark:text-ink-dark shadow-lg flex items-center gap-1.5 border border-border-soft dark:border-border-soft-dark text-center">
+                {gift.isBookedByMe ? (
+                  <>Вы дарите этот подарок 🎁</>
+                ) : (
+                  <>
+                    <Lock size={12} className="text-accent-rose shrink-0" />
+                    <span>Забронировал {bookerName}</span>
+                  </>
+                )}
               </span>
             </div>
           )}
@@ -94,7 +110,7 @@ export const GiftCard: React.FC<GiftCardProps> = ({
 
         {/* Content details */}
         <div className="p-4">
-          <h3 className="font-bold text-sm text-ink-light dark:text-ink-dark line-clamp-2 leading-snug">
+          <h3 className={`${headingFont} text-sm text-ink-light dark:text-ink-dark line-clamp-2 leading-snug`}>
             {gift.title}
           </h3>
 
@@ -147,14 +163,14 @@ export const GiftCard: React.FC<GiftCardProps> = ({
           <div className="flex items-center gap-2 pt-2 border-t border-border-soft/60 dark:border-border-soft-dark/60">
             <button
               onClick={() => onEdit(gift)}
-              className="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-white dark:bg-surface-soft-dark text-ink-light dark:text-ink-dark hover:text-accent-rose flex items-center justify-center gap-1.5 transition-colors active-press shadow-sm"
+              className="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-white dark:bg-surface-soft-dark text-ink-light dark:text-ink-dark hover:text-accent-rose flex items-center justify-center gap-1.5 transition-colors active-press shadow-sm border border-border-soft/40"
             >
               <Edit3 size={13} />
               Изменить
             </button>
             <button
               onClick={() => onDelete(gift)}
-              className="p-2 rounded-full bg-white dark:bg-surface-soft-dark text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors active-press shadow-sm"
+              className="p-2 rounded-full bg-white dark:bg-surface-soft-dark text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors active-press shadow-sm border border-border-soft/40"
               title="Удалить подарок"
             >
               <Trash2 size={14} />
@@ -181,8 +197,11 @@ export const GiftCard: React.FC<GiftCardProps> = ({
                   Вы дарите (Отменить?)
                 </button>
               ) : (
-                <div className="w-full py-2.5 rounded-full text-xs font-bold text-ink-muted text-center bg-black/5 dark:bg-white/5 cursor-not-allowed">
-                  Забронировано
+                <div className="w-full py-2.5 px-3 rounded-full text-xs font-bold text-ink-muted text-center bg-black/5 dark:bg-white/5 border border-border-soft dark:border-border-soft-dark flex items-center justify-center gap-1.5">
+                  <Lock size={12} className="text-ink-muted shrink-0" />
+                  <span className="truncate">
+                    Забронировал: <b className="text-accent-rose">{bookerName}</b>
+                  </span>
                 </div>
               )
             ) : (

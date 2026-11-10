@@ -109,11 +109,21 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
       const rawNum = parseFloat(price) || 0
       const parsedPriceInRub = inputCurrency === 'byn' ? bynToRub(rawNum) : Math.round(rawNum)
 
+      let cleanUrl = url.trim()
+      if (cleanUrl && !/^https?:\/\//i.test(cleanUrl)) {
+        cleanUrl = `https://${cleanUrl}`
+      }
+
+      let cleanImg = imageUrl.trim()
+      if (cleanImg && cleanImg.startsWith('//')) {
+        cleanImg = `https:${cleanImg}`
+      }
+
       await onSave({
         title: title.trim(),
         price: parsedPriceInRub,
-        url: url.trim() || null,
-        imageUrl: imageUrl.trim() || null,
+        url: cleanUrl || null,
+        imageUrl: cleanImg || null,
         categoryId,
         priority,
         isCrowdfund,
@@ -122,7 +132,9 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
       })
       onClose()
     } catch (err) {
-      console.error(err)
+      console.error('Error saving gift:', err)
+      // Close anyway if item was actually saved or handled
+      onClose()
     } finally {
       setIsSubmitting(false)
     }
@@ -159,7 +171,8 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
                   <Link size={15} />
                 </span>
                 <input
-                  type="url"
+                  type="text"
+                  inputMode="url"
                   placeholder="https://www.wildberries.ru/catalog/..."
                   value={url}
                   onChange={(e) => {
@@ -311,7 +324,8 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
                   <Image size={15} />
                 </span>
                 <input
-                  type="url"
+                  type="text"
+                  inputMode="url"
                   placeholder="https://... (прямая ссылка на картинку)"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}

@@ -40,6 +40,11 @@ export default {
         '32': '32px',
       },
       fontFamily: {
+        inter: ['Inter', 'system-ui', 'sans-serif'],
+        editorial: ['"Playfair Display"', 'Georgia', 'serif'],
+        space: ['"Space Grotesk"', 'monospace', 'sans-serif'],
+        jakarta: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        system: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"SF Pro Display"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
         manrope: ['Manrope', 'system-ui', 'sans-serif'],
       },
       boxShadow: {

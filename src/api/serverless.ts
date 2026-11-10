@@ -186,12 +186,16 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
       if (input.action === 'unbook') {
         gift.isBooked = false
         gift.isBookedByMe = false
+        gift.bookedByName = null
+        gift.bookedByUsername = null
       } else {
         if (gift.isBooked && !gift.isBookedByMe) {
           throw new Error('Подарок уже забронирован другим гостем')
         }
         gift.isBooked = true
         gift.isBookedByMe = true
+        gift.bookedByName = 'Вы'
+        gift.bookedByUsername = 'my_user'
       }
       saveMockGifts(giftsList)
       return { success: true, isBooked: gift.isBooked, isBookedByMe: gift.isBookedByMe } as unknown as T

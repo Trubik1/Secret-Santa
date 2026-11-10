@@ -11,19 +11,18 @@ import {
 import { parseWildberriesClient } from './api/clientParser'
 import { CurrencyMode } from './utils/currency'
 import { fireConfetti } from './utils/confetti'
+import { DesignTheme, THEME_OPTIONS } from './utils/theme'
 import { HeroProfile } from './components/HeroProfile'
 import { CategoryFilter } from './components/CategoryFilter'
 import { GiftCard } from './components/GiftCard'
 import { AddGiftModal } from './components/AddGiftModal'
 import { PledgeModal } from './components/PledgeModal'
-import { EditProfileModal } from './components/EditProfileModal'
 import { BudgetHelperModal } from './components/BudgetHelperModal'
 import { ShareModal } from './components/ShareModal'
+import { SettingsModal } from './components/SettingsModal'
 import { StickyActionBar } from './components/StickyActionBar'
 import { DevToolsBar } from './components/DevToolsBar'
 import { Loader2, Plus, CheckCircle2, Sparkles, SlidersHorizontal } from 'lucide-react'
-
-type BudgetFilter = 'all' | 'under3k' | 'mid' | 'high' | 'crowdfund'
 
 export function App() {
   const {
@@ -40,7 +39,8 @@ export function App() {
   const [data, setData] = useState<WishlistData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('all')
-  const [selectedBudget, setSelectedBudget] = useState<BudgetFilter>('all')
+
+  // Currency preference (defaults to 'both' dual RUB + BYN)
   const [currencyMode, setCurrencyMode] = useState<CurrencyMode>(() => {
     try {
       return (localStorage.getItem('wishlist_curr') as CurrencyMode) || 'both'
@@ -49,13 +49,22 @@ export function App() {
     }
   })
 
+  // 5 Design & Typography Styles (defaults to 'inter')
+  const [designTheme, setDesignTheme] = useState<DesignTheme>(() => {
+    try {
+      return (localStorage.getItem('wishlist_theme') as DesignTheme) || 'inter'
+    } catch (_) {
+      return 'inter'
+    }
+  })
+
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingGift, setEditingGift] = useState<Gift | null>(null)
   const [pledgingGift, setPledgingGift] = useState<Gift | null>(null)
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
 
   // Toast feedback
   const [toast, setToast] = useState<string | null>(null)
@@ -65,21 +74,25 @@ export function App() {
     setTimeout(() => setToast(null), 3000)
   }, [])
 
-  const handleToggleCurrencyMode = () => {
+  // Active theme object
+  const activeTheme = useMemo(() => {
+    return THEME_OPTIONS.find((t) => t.id === designTheme) || THEME_OPTIONS[0]
+  }, [designTheme])
+
+  const handleSelectCurrency = (c: CurrencyMode) => {
     haptics.selection()
-    const next: CurrencyMode =
-      currencyMode === 'both' ? 'rub' : currencyMode === 'rub' ? 'byn' : 'both'
-    setCurrencyMode(next)
+    setCurrencyMode(c)
     try {
-      localStorage.setItem('wishlist_curr', next)
+      localStorage.setItem('wishlist_curr', c)
     } catch (_) {}
-    showToast(
-      next === 'both'
-        ? 'Валюта: ₽ + Br (Обе валюты) 🇧🇾🇷🇺'
-        : next === 'rub'
-        ? 'Валюта: Российские рубли (₽)'
-        : 'Валюта: Белорусские рубли (Br) 🇧🇾'
-    )
+  }
+
+  const handleSelectTheme = (t: DesignTheme) => {
+    haptics.selection()
+    setDesignTheme(t)
+    try {
+      localStorage.setItem('wishlist_theme', t)
+    } catch (_) {}
   }
 
   // Determine target owner ID from start_param or caller
@@ -124,35 +137,12 @@ export function App() {
     setSelectedCategory(cat)
   }
 
-  // Budget filter
-  const handleSelectBudget = (b: BudgetFilter) => {
-    haptics.selection()
-    setSelectedBudget(b)
-  }
-
-  // Filter gifts by category and budget
+  // Filter gifts by category
   const filteredGifts = useMemo(() => {
     if (!data?.gifts) return []
-    let list = data.gifts
-
-    // Category filter
-    if (selectedCategory !== 'all') {
-      list = list.filter((g) => g.categoryId === selectedCategory)
-    }
-
-    // Budget filter
-    if (selectedBudget === 'under3k') {
-      list = list.filter((g) => g.price > 0 && g.price <= 3000 && !g.isCrowdfund)
-    } else if (selectedBudget === 'mid') {
-      list = list.filter((g) => g.price > 3000 && g.price <= 10000)
-    } else if (selectedBudget === 'high') {
-      list = list.filter((g) => g.price > 10000)
-    } else if (selectedBudget === 'crowdfund') {
-      list = list.filter((g) => g.isCrowdfund)
-    }
-
-    return list
-  }, [data?.gifts, selectedCategory, selectedBudget])
+    if (selectedCategory === 'all') return data.gifts
+    return data.gifts.filter((g) => g.categoryId === selectedCategory)
+  }, [data?.gifts, selectedCategory])
 
   // Gift actions
   const handleOpenAddModal = () => {
@@ -284,8 +274,10 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-ink-light dark:text-ink-dark flex flex-col font-manrope selection:bg-surface-soft selection:text-accent-rose">
-      {/* Dev Tools Bar in standalone browser */}
+    <div
+      className={`min-h-screen bg-bg-light dark:bg-bg-dark text-ink-light dark:text-ink-dark flex flex-col ${activeTheme.fontClass} selection:bg-surface-soft selection:text-accent-rose`}
+    >
+      {/* Dev Tools Bar in standalone browser only */}
       {!isTelegramServerlessAvailable() && !isInsideTelegram && (
         <DevToolsBar
           isOwner={data?.isOwner ?? true}
@@ -305,75 +297,39 @@ export function App() {
           </div>
         ) : data ? (
           <>
-            {/* Hero Profile */}
+            {/* Bento Hero Profile */}
             <HeroProfile
               profile={data.profile}
               isOwner={data.isOwner}
               stats={data.stats}
-              currencyMode={currencyMode}
-              onEditProfile={() => setIsProfileModalOpen(true)}
-              onOpenShare={() => setIsShareModalOpen(true)}
-              onToggleCurrencyMode={handleToggleCurrencyMode}
+              theme={activeTheme}
+              onOpenShare={handleShareWishlist}
+              onOpenSettings={() => setIsSettingsModalOpen(true)}
               onHaptic={() => haptics.impact('light')}
             />
 
-            {/* Sticky Filters Area */}
-            <div className="sticky top-0 z-30 bg-bg-light/90 dark:bg-bg-dark/90 backdrop-blur-md pt-1 pb-2 border-b border-border-soft/40 dark:border-border-soft-dark/40">
-              {/* Category Filter */}
-              <CategoryFilter
-                selectedCategory={selectedCategory}
-                onSelectCategory={handleSelectCategory}
-              />
-
-              {/* Secondary Budget & Currency Pills Bar */}
-              <div className="flex items-center gap-1.5 px-4 pt-1.5 overflow-x-auto no-scrollbar">
-                {/* Smart Helper Pill */}
-                {!data.isOwner && (
-                  <button
-                    onClick={() => {
-                      haptics.impact('light')
-                      setIsBudgetModalOpen(true)
-                    }}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-gradient-to-r from-accent-rose to-accent-pink text-white shrink-0 active-press shadow-sm shadow-accent-rose/25"
-                  >
-                    <Sparkles size={12} />
-                    <span>Помощник 🎲</span>
-                  </button>
-                )}
-
-                {/* Currency Switcher Pill */}
-                <button
-                  onClick={handleToggleCurrencyMode}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-extrabold bg-surface-soft dark:bg-surface-soft-dark text-ink-light dark:text-ink-dark border border-border-soft dark:border-border-soft-dark shrink-0 active-press hover:border-accent-rose transition-colors"
-                  title="Переключить валюту: ₽, Br или Обе"
-                >
-                  <span>🇧🇾/🇷🇺</span>
-                  <span>{currencyMode === 'both' ? '₽ + Br' : currencyMode === 'rub' ? '₽' : 'Br'}</span>
-                </button>
-
-                {[
-                  { id: 'all' as const, label: 'Все цены' },
-                  { id: 'under3k' as const, label: 'до 3к ₽ (~100 Br)' },
-                  { id: 'mid' as const, label: '3к–10к ₽ (~100–340 Br)' },
-                  { id: 'high' as const, label: 'от 10к ₽ (~340+ Br)' },
-                  { id: 'crowdfund' as const, label: 'Складчина 🤝' },
-                ].map((b) => {
-                  const isSelected = selectedBudget === b.id
-                  return (
-                    <button
-                      key={b.id}
-                      onClick={() => handleSelectBudget(b.id)}
-                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap shrink-0 transition-all active-press ${
-                        isSelected
-                          ? 'bg-ink-light text-white dark:bg-white dark:text-ink-light shadow-sm'
-                          : 'bg-surface-soft/80 dark:bg-surface-soft-dark/80 text-ink-muted hover:text-ink-light dark:hover:text-ink-dark border border-border-soft/50 dark:border-border-soft-dark/50'
-                      }`}
-                    >
-                      {b.label}
-                    </button>
-                  )
-                })}
+            {/* Clean Sticky Filter Bar */}
+            <div className="sticky top-0 z-30 bg-bg-light/90 dark:bg-bg-dark/90 backdrop-blur-md pt-1 pb-2 border-b border-border-soft/40 dark:border-border-soft-dark/40 flex items-center justify-between px-1">
+              <div className="flex-1 min-w-0">
+                <CategoryFilter
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={handleSelectCategory}
+                />
               </div>
+
+              {/* Discreet Assistant Button for guests */}
+              {!data.isOwner && (
+                <button
+                  onClick={() => {
+                    haptics.impact('light')
+                    setIsBudgetModalOpen(true)
+                  }}
+                  className="mr-3 p-2 rounded-full bg-surface-soft dark:bg-surface-soft-dark text-accent-rose hover:bg-accent-rose/10 active-press transition-colors shrink-0 shadow-sm border border-border-soft dark:border-border-soft-dark"
+                  title="Умный помощник по бюджету"
+                >
+                  <Sparkles size={16} />
+                </button>
+              )}
             </div>
 
             {/* Gifts Grid */}
@@ -386,6 +342,7 @@ export function App() {
                       gift={gift}
                       isOwner={data.isOwner}
                       currencyMode={currencyMode}
+                      theme={activeTheme}
                       onBook={handleBookGift}
                       onUnbook={handleUnbookGift}
                       onPledge={handleOpenPledge}
@@ -397,19 +354,21 @@ export function App() {
                 </div>
               ) : (
                 /* Empty state with Unibb Bunny */
-                <div className="p-8 text-center bg-surface-card dark:bg-surface-card-dark rounded-32 border border-border-soft dark:border-border-soft-dark mt-4 relative overflow-hidden">
+                <div
+                  className={`p-8 text-center bg-surface-card dark:bg-surface-card-dark ${activeTheme.cardRadius} border border-border-soft dark:border-border-soft-dark mt-4 relative overflow-hidden`}
+                >
                   <img
                     src="/stickers/bunny-heart.webp"
                     alt="Empty Wishlist"
                     className="w-24 h-24 mx-auto object-contain mb-2 drop-shadow-md"
                   />
-                  <h3 className="font-extrabold text-base text-ink-light dark:text-ink-dark">
+                  <h3 className={`font-extrabold text-base text-ink-light dark:text-ink-dark ${activeTheme.headingFont}`}>
                     В этой категории пока пусто
                   </h3>
                   <p className="text-xs text-ink-muted mt-1 max-w-xs mx-auto">
                     {data.isOwner
                       ? 'Добавьте первое желание, чтобы друзья знали, что подарить!'
-                      : 'В этой ценовой категории пока нет желаний.'}
+                      : 'В этой категории пока нет добавленных желаний.'}
                   </p>
                   {data.isOwner ? (
                     <button
@@ -421,14 +380,11 @@ export function App() {
                     </button>
                   ) : (
                     <button
-                      onClick={() => {
-                        setSelectedCategory('all')
-                        setSelectedBudget('all')
-                      }}
+                      onClick={() => setSelectedCategory('all')}
                       className="mt-4 px-4 py-2 rounded-full bg-surface-soft dark:bg-surface-soft-dark text-accent-rose text-xs font-bold inline-flex items-center gap-1 active-press"
                     >
                       <SlidersHorizontal size={13} />
-                      Сбросить фильтры
+                      Показать все
                     </button>
                   )}
                 </div>
@@ -471,12 +427,20 @@ export function App() {
       />
 
       {data && (
-        <EditProfileModal
-          isOpen={isProfileModalOpen}
+        <SettingsModal
+          isOpen={isSettingsModalOpen}
           profile={data.profile}
-          onClose={() => setIsProfileModalOpen(false)}
-          onSave={handleSaveProfile}
+          isOwner={data.isOwner}
+          currencyMode={currencyMode}
+          designTheme={designTheme}
+          colorScheme={colorScheme}
+          onClose={() => setIsSettingsModalOpen(false)}
+          onSelectCurrency={handleSelectCurrency}
+          onSelectTheme={handleSelectTheme}
+          onToggleColorScheme={handleToggleTheme}
+          onSaveProfile={handleSaveProfile}
           onHaptic={() => haptics.impact('light')}
+          onShowToast={showToast}
         />
       )}
 

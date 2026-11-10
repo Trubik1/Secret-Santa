@@ -59,6 +59,25 @@ export default async function (input, ctx) {
     }
   }
 
+  // Fetch booker profiles for guests
+  let bookerUsersMap = {}
+  if (!isOwner) {
+    const bookerUserIds = [...new Set(rawGifts.filter(g => g.isBooked && g.bookedByUserId).map(g => g.bookedByUserId))]
+    if (bookerUserIds.length > 0) {
+      try {
+        const bookers = await db.select().from(users).where(inArray(users.id, bookerUserIds)).all()
+        for (const b of bookers) {
+          bookerUsersMap[b.id] = {
+            name: [b.firstName, b.lastName].filter(Boolean).join(' ') || b.firstName || 'Друг',
+            username: b.username || null,
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load bookers:', err)
+      }
+    }
+  }
+
   const processedGifts = rawGifts.map(g => {
     const giftPledgesList = pledgesByGiftId[g.id] || []
     const totalPledged = giftPledgesList.reduce((sum, p) => sum + (p.amount || 0), 0)
@@ -90,6 +109,7 @@ export default async function (input, ctx) {
       // Guests see actual status so they don't gift duplicates
       const isBookedByMe = (g.bookedByUserId === caller.id)
       const myPledge = giftPledgesList.find(p => p.userId === caller.id)
+      const booker = g.bookedByUserId ? bookerUsersMap[g.bookedByUserId] : null
 
       return {
         id: g.id,
@@ -106,6 +126,8 @@ export default async function (input, ctx) {
         createdAt: g.createdAt,
         isBooked: Boolean(g.isBooked),
         isBookedByMe,
+        bookedByName: booker?.name || null,
+        bookedByUsername: booker?.username || null,
         totalPledged,
         pledgesCount: giftPledgesList.length,
         myPledgedAmount: myPledge ? myPledge.amount : 0,

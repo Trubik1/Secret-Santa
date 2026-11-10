@@ -55,6 +55,28 @@ export default async function (input, ctx) {
     throw new EndpointError('Этот подарок уже забронирован другим гостем', { code: 'ALREADY_BOOKED' })
   }
 
+  // Ensure caller exists in users table with up-to-date username/name
+  try {
+    const existing = await db.select().from(users).where(eq(users.id, caller.id)).get()
+    if (!existing) {
+      await db.insert(users).values({
+        id: caller.id,
+        firstName: caller.first_name || 'Друг',
+        lastName: caller.last_name || null,
+        username: caller.username || null,
+        photoUrl: caller.photo_url || null,
+      }).run()
+    } else if (caller.username && existing.username !== caller.username) {
+      await db.update(users).set({
+        username: caller.username,
+        firstName: caller.first_name || existing.firstName,
+        lastName: caller.last_name || existing.lastName,
+      }).where(eq(users.id, caller.id)).run()
+    }
+  } catch (uErr) {
+    console.warn('Caller sync in users table error:', uErr)
+  }
+
   const now = new Date().toISOString()
   await db.update(gifts).set({
     isBooked: true,
