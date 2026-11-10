@@ -48,3 +48,4 @@
 - **[2026-11-10]** style: standardize Studio Minimal OLED theme across all screens
 - **[2026-11-10]** refactor(ui): remove cartoon stickers and clean up visual hierarchy
 - **[2026-11-10]** style(typography): polish Unbounded font weights and uppercase badges
+- **[2026-11-10]** feat(api): handle serverless envelope parsing and timeout recovery
