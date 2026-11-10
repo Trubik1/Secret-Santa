@@ -5,13 +5,13 @@ import { users } from '../schema.js'
 export default async function (message, ctx) {
   const chatId = message.chat?.id
   const fromUser = message.from
-  const text = message.text || ''
+  const text = (message.text || '').trim()
 
   if (!chatId || !fromUser) return
 
   const botMe = await api.getMe()
   const botId = botMe.id
-  const botUsername = botMe.username
+  const botUsername = botMe.username || 'giftly_me_bot'
   const appBaseUrl = `https://app${botId}.tgcloud.ai/`
 
   // Register or update user in DB
@@ -24,7 +24,7 @@ export default async function (message, ctx) {
         lastName: fromUser.last_name || null,
         username: fromUser.username || null,
         photoUrl: null,
-        eventTitle: 'Мой День Рождения 🎂',
+        eventTitle: '',
         eventDate: null,
       }).run()
     } else {
@@ -35,7 +35,7 @@ export default async function (message, ctx) {
       }).where(eq(users.id, fromUser.id)).run()
     }
   } catch (err) {
-    console.error('Failed to sync user on /start:', err)
+    console.error('Failed to sync user on message:', err)
   }
 
   // Handle /start commands
@@ -43,27 +43,28 @@ export default async function (message, ctx) {
     const parts = text.split(' ')
     const startParam = parts[1] || ''
 
+    // 1. Friend opened wishlist via link: /start wish_123
     if (startParam.startsWith('wish_')) {
       const targetUserId = parseInt(startParam.replace('wish_', ''), 10)
       if (targetUserId) {
         let ownerName = 'друга'
         try {
           const owner = await db.select().from(users).where(eq(users.id, targetUserId)).get()
-          if (owner) {
+          if (owner && owner.firstName) {
             ownerName = owner.firstName
           }
         } catch (_) {}
 
         await api.sendMessage({
           chat_id: chatId,
-          text: `🎁 <b>Вишлист ${ownerName}</b>\n\n` +
-                `Открой приложение, чтобы посмотреть список подарков, забронировать понравившийся или скинуться вместе с друзьями!`,
+          text: `Вишлист <b>${ownerName}</b> 🎁\n\n` +
+                `Выбирай, что подарить, бронируй подарок в один клик или скидывайся вместе с компанией друзей.`,
           parse_mode: 'HTML',
           reply_markup: {
             inline_keyboard: [
               [
                 {
-                  text: `✨ Открыть вишлист ${ownerName}`,
+                  text: `✨ Открыть список ${ownerName}`,
                   web_app: {
                     url: `${appBaseUrl}?start_param=wish_${targetUserId}`,
                   },
@@ -76,20 +77,20 @@ export default async function (message, ctx) {
       }
     }
 
-    // Default /start for owner
+    // 2. Owner opened bot: /start
     const shareLink = `https://t.me/${botUsername}?start=wish_${fromUser.id}`
     const rawName = (fromUser.first_name || '').trim()
     const displayName = (rawName && rawName !== '•' && rawName !== '.')
       ? rawName
-      : (fromUser.username ? `@${fromUser.username}` : 'Друг')
+      : (fromUser.username ? `@${fromUser.username}` : 'друг')
 
-    // Ensure persistent menu button is set for this chat
+    // Set persistent bottom-left chat menu button
     try {
       await api.setChatMenuButton({
         chat_id: chatId,
         menu_button: {
           type: 'web_app',
-          text: 'Вишлист 🎁',
+          text: '🎁 Вишлист',
           web_app: {
             url: appBaseUrl,
           },
@@ -99,16 +100,15 @@ export default async function (message, ctx) {
 
     await api.sendMessage({
       chat_id: chatId,
-      text: `👋 Привет, <b>${displayName}</b>!\n\n` +
-            `Добро пожаловать в <b>Wishlist</b> — твой персональный список желаний с режимом сюрприза и возможностью скидываться на подарки!\n\n` +
-            `🔗 <b>Твоя персональная ссылка для друзей:</b>\n<code>${shareLink}</code>\n\n` +
-            `Нажми кнопку ниже, чтобы открыть вишлист и добавить первые подарки:`,
+      text: `Привет, <b>${displayName}</b>!\n\n` +
+            `Здесь твой персональный вишлист. Добавляй товары прямо по ссылкам с Wildberries или Ozon, а друзья смогут их бронировать или скидываться.\n\n` +
+            `🔗 Твоя ссылка для друзей:\n<code>${shareLink}</code>`,
       parse_mode: 'HTML',
       reply_markup: {
         inline_keyboard: [
           [
             {
-              text: '🎁 Мой вишлист',
+              text: '🎁 Открыть вишлист',
               web_app: {
                 url: appBaseUrl,
               },
@@ -116,8 +116,8 @@ export default async function (message, ctx) {
           ],
           [
             {
-              text: '📤 Поделиться ссылкой',
-              url: `https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent('Привет! Вот мой список желаний на грядущий праздник 🎂')}`,
+              text: '📤 Отправить друзьям',
+              url: `https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(`Мой вишлист 🎁 ➔ ${shareLink}`)}`,
             }
           ]
         ]
@@ -126,15 +126,17 @@ export default async function (message, ctx) {
     return
   }
 
-  // Fallback info for other messages
+  // Handle /help or any other text
+  const shareLink = `https://t.me/${botUsername}?start=wish_${fromUser.id}`
   await api.sendMessage({
     chat_id: chatId,
-    text: `Чтобы открыть свои желания или настроить праздник, нажми кнопку ниже:`,
+    text: `Нажми кнопку ниже, чтобы открыть свой вишлист, добавить подарки или посмотреть списки друзей 👇`,
+    parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [
         [
           {
-            text: '✨ Открыть Wishlist',
+            text: '🎁 Открыть вишлист',
             web_app: {
               url: appBaseUrl,
             },
