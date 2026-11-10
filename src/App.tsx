@@ -18,7 +18,7 @@ import { AddGiftModal } from './components/AddGiftModal'
 import { PledgeModal } from './components/PledgeModal'
 import { BudgetHelperModal } from './components/BudgetHelperModal'
 import { ShareModal } from './components/ShareModal'
-import { SettingsModal } from './components/SettingsModal'
+import { SettingsPage } from './components/SettingsPage'
 import { BottomNavDock, NavTabType } from './components/BottomNavDock'
 import { FriendsWishlistPage } from './components/FriendsWishlistPage'
 import { SecretSantaPage } from './components/SecretSantaPage'
@@ -29,8 +29,6 @@ export function App() {
   const {
     user,
     startParam,
-    colorScheme,
-    setColorScheme,
     isInsideTelegram,
     haptics,
     openTelegramLink,
@@ -64,7 +62,6 @@ export function App() {
   const [pledgingGift, setPledgingGift] = useState<Gift | null>(null)
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
 
   // Toast feedback
   const [toast, setToast] = useState<string | null>(null)
@@ -240,32 +237,22 @@ export function App() {
     showToast('Данные сброшены к начальным')
   }
 
-  const handleToggleTheme = () => {
-    setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')
-  }
-
   const handleSelectGiftFromHelper = (gift: Gift) => {
     setSelectedGiftDetail(gift)
   }
 
   const handleNavTabChange = (tab: NavTabType) => {
-    if (tab === 'settings') {
-      setIsSettingsModalOpen(true)
-    } else {
-      setCurrentNavTab(tab)
-    }
+    setCurrentNavTab(tab)
   }
 
   return (
-    <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-ink-light dark:text-ink-dark flex flex-col font-inter selection:bg-surface-soft selection:text-accent-rose overflow-x-hidden">
+    <div className="min-h-screen bg-[#0d0d0f] text-[#f5f5f7] flex flex-col font-inter selection:bg-[#241920] selection:text-[#c4457b] overflow-x-hidden">
       {/* Dev Tools Bar in standalone browser only */}
       {!isTelegramServerlessAvailable() && !isInsideTelegram && (
         <DevToolsBar
           isOwner={data?.isOwner ?? true}
-          colorScheme={colorScheme}
           onToggleOwner={handleToggleOwner}
           onResetData={handleResetData}
-          onToggleTheme={handleToggleTheme}
         />
       )}
 
@@ -309,7 +296,6 @@ export function App() {
                   profile={data.profile}
                   isOwner={data.isOwner}
                   onOpenShare={handleShareWishlist}
-                  onOpenSettings={() => setIsSettingsModalOpen(true)}
                   onHaptic={() => haptics.impact('light')}
                 />
 
@@ -392,6 +378,7 @@ export function App() {
             {/* VIEW 2: FRIENDS' WISHLISTS */}
             {currentNavTab === 'friends' && (
               <FriendsWishlistPage
+                currentUserId={data?.profile?.id}
                 onOpenFriendWishlist={(friendId) => {
                   setTargetFriendId(friendId)
                   setCurrentNavTab('my')
@@ -406,6 +393,19 @@ export function App() {
               <SecretSantaPage
                 onBackToWishlist={() => setCurrentNavTab('my')}
                 onHaptic={() => haptics.impact('light')}
+              />
+            )}
+
+            {/* VIEW 4: SETTINGS (Full Page within Dock Navigation) */}
+            {currentNavTab === 'settings' && data && (
+              <SettingsPage
+                profile={data.profile}
+                isOwner={data.isOwner}
+                currencyMode={currencyMode}
+                onSelectCurrency={handleSelectCurrency}
+                onSaveProfile={handleSaveProfile}
+                onHaptic={() => haptics.impact('light')}
+                onShowToast={showToast}
               />
             )}
           </>
@@ -458,23 +458,6 @@ export function App() {
         onOpenTelegramLink={openTelegramLink}
         onHaptic={() => haptics.impact('light')}
       />
-
-      {/* Settings Modal (Single Currency, Dark/Light, Holiday Date) */}
-      {data && (
-        <SettingsModal
-          isOpen={isSettingsModalOpen}
-          profile={data.profile}
-          isOwner={data.isOwner}
-          currencyMode={currencyMode}
-          colorScheme={colorScheme}
-          onClose={() => setIsSettingsModalOpen(false)}
-          onSelectCurrency={handleSelectCurrency}
-          onToggleColorScheme={handleToggleTheme}
-          onSaveProfile={handleSaveProfile}
-          onHaptic={() => haptics.impact('light')}
-          onShowToast={showToast}
-        />
-      )}
 
       {/* Budget Helper Modal */}
       {data && (

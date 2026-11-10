@@ -8,8 +8,8 @@ export default async function (input, ctx) {
     throw new EndpointError('Unauthorized: missing user in initData', { code: 'UNAUTHORIZED' })
   }
 
-  const eventTitle = input?.eventTitle !== undefined ? input.eventTitle.trim() : null
-  const eventDate = input?.eventDate !== undefined ? input.eventDate.trim() : null
+  const eventTitle = input?.eventTitle !== undefined ? (input.eventTitle ? input.eventTitle.trim() : '') : null
+  const eventDate = input?.eventDate !== undefined ? (input.eventDate ? input.eventDate.trim() : null) : null
 
   const existing = await db.select().from(users).where(eq(users.id, caller.id)).get()
   if (!existing) {
@@ -18,13 +18,13 @@ export default async function (input, ctx) {
       firstName: caller.first_name || 'Пользователь',
       lastName: caller.last_name || null,
       username: caller.username || null,
-      eventTitle: eventTitle || 'Мой День Рождения 🎂',
+      eventTitle: eventTitle !== null ? eventTitle : '',
       eventDate: eventDate || null,
     }).run()
   } else {
     await db.update(users).set({
-      eventTitle: eventTitle !== null ? eventTitle : existing.eventTitle,
-      eventDate: eventDate !== null ? eventDate : existing.eventDate,
+      eventTitle: eventTitle !== null ? eventTitle : '',
+      eventDate: input?.eventDate !== undefined ? eventDate : existing.eventDate,
     }).where(eq(users.id, caller.id)).run()
   }
 

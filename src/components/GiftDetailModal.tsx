@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Gift } from '../types'
 import { CurrencyMode, formatPrice, CROWDFUND_THRESHOLDS_IN_RUB } from '../utils/currency'
-import { X, ExternalLink, Edit3, Trash2, Gift as GiftIcon, Users, CheckCircle2, Lock } from 'lucide-react'
+import { ExternalLink, Edit3, Trash2, Gift as GiftIcon, Users, CheckCircle2, Lock } from 'lucide-react'
 
 interface GiftDetailModalProps {
   gift: Gift | null
@@ -130,17 +130,6 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
             Потяните вниз для закрытия
           </span>
         </div>
-
-        {/* Close Button top-right */}
-        <button
-          onClick={() => {
-            onHaptic?.()
-            handleDismiss()
-          }}
-          className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors"
-        >
-          <X size={16} />
-        </button>
 
         {/* Product Image */}
         {gift.imageUrl ? (

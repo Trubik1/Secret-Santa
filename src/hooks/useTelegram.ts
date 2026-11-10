@@ -11,57 +11,32 @@ declare global {
 export function useTelegram() {
   const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined
 
-  // 1. Always prioritize persistent user preference in localStorage
-  const [colorScheme, setColorSchemeState] = useState<'light' | 'dark'>(() => {
-    try {
-      const saved = localStorage.getItem('wishlist_color_scheme') as 'light' | 'dark'
-      if (saved === 'light' || saved === 'dark') return saved
-    } catch (_) {}
+  // Enforce dark mode as requested ("убери белую тему пока она нам не нужна")
+  const [colorScheme, setColorSchemeState] = useState<'light' | 'dark'>('dark')
 
-    if (tg?.colorScheme) return tg.colorScheme
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark'
-    }
-    return 'dark'
-  })
-
-  const setColorScheme = (scheme: 'light' | 'dark') => {
-    setColorSchemeState(scheme)
+  const setColorScheme = (_scheme: 'light' | 'dark') => {
+    // Keep dark mode enforced
+    setColorSchemeState('dark')
     try {
-      localStorage.setItem('wishlist_color_scheme', scheme)
+      localStorage.setItem('wishlist_color_scheme', 'dark')
     } catch (_) {}
   }
+
+  useEffect(() => {
+    // Always enforce dark theme
+    document.documentElement.classList.add('dark')
+    try {
+      localStorage.setItem('wishlist_color_scheme', 'dark')
+    } catch (_) {}
+  }, [])
 
   useEffect(() => {
     if (!tg) return
 
     tg.ready()
     tg.expand()
-
-    const onThemeChange = () => {
-      // Only adopt telegram theme if user has never manually toggled it in localStorage
-      try {
-        const saved = localStorage.getItem('wishlist_color_scheme')
-        if (!saved && tg.colorScheme) {
-          setColorSchemeState(tg.colorScheme)
-        }
-      } catch (_) {}
-    }
-
-    tg.onEvent?.('themeChanged', onThemeChange)
-    return () => {
-      tg.offEvent?.('themeChanged', onThemeChange)
-    }
+    document.documentElement.classList.add('dark')
   }, [tg])
-
-  useEffect(() => {
-    // Sync dark class on document element immediately
-    if (colorScheme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [colorScheme])
 
   const haptics = useMemo(() => ({
     impact: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') => {

@@ -156,7 +156,7 @@ export default async function (input, ctx) {
       lastName: profile.lastName,
       username: profile.username,
       photoUrl: profile.photoUrl,
-      eventTitle: profile.eventTitle || 'Мой День Рождения 🎂',
+      eventTitle: profile.eventTitle || '',
       eventDate: profile.eventDate,
     },
     isOwner,

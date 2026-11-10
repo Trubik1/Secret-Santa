@@ -1,12 +1,11 @@
 import React from 'react'
 import { UserProfile } from '../types'
-import { Calendar, Share2, Settings } from 'lucide-react'
+import { Calendar, Share2 } from 'lucide-react'
 
 interface HeroProfileProps {
   profile: UserProfile
   isOwner: boolean
   onOpenShare: () => void
-  onOpenSettings: () => void
   onHaptic?: () => void
 }
 
@@ -14,7 +13,6 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
   profile,
   isOwner,
   onOpenShare,
-  onOpenSettings,
   onHaptic,
 }) => {
   // Calculate countdown days (if eventDate is set)
@@ -83,11 +81,13 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
                 )}
               </div>
 
-              {/* Event title & countdown badge (or clean wishlist subtitle) */}
+              {/* Event title & countdown badge (only if set) */}
               <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-bold text-accent-rose truncate max-w-[200px]">
-                  {profile.eventTitle || 'Вишлист желаний ✨'}
-                </span>
+                {profile.eventTitle ? (
+                  <span className="text-xs font-bold text-accent-rose truncate max-w-[200px]">
+                    {profile.eventTitle}
+                  </span>
+                ) : null}
                 {countdownText && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-surface-soft dark:bg-[#241920] text-ink-light dark:text-ink-dark border border-border-soft/60 dark:border-[#34252f]">
                     <Calendar size={10} className="text-accent-rose" />
@@ -98,8 +98,8 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
             </div>
           </div>
 
-          {/* Clean Action Buttons: Share & Settings (NO currency button here) */}
-          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+          {/* Clean Action Button: Share only */}
+          <div className="flex items-center shrink-0 ml-2">
             <button
               onClick={() => {
                 onHaptic?.()
@@ -109,17 +109,6 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
               title="Поделиться вишлистом"
             >
               <Share2 size={16} />
-            </button>
-
-            <button
-              onClick={() => {
-                onHaptic?.()
-                onOpenSettings()
-              }}
-              className="p-2.5 rounded-full bg-surface-soft dark:bg-[#241920] text-ink-light dark:text-ink-dark hover:text-accent-rose transition-colors active-press shadow-sm border border-border-soft/60 dark:border-[#34252f]"
-              title="Настройки"
-            >
-              <Settings size={16} />
             </button>
           </div>
         </div>

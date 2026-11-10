@@ -5,10 +5,9 @@ export const INITIAL_MOCK_PROFILE: UserProfile = {
   firstName: 'Артем',
   lastName: '',
   username: 'artem_wishes',
-  photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
-  eventTitle: 'День рождения Артема 🎂',
-  // Event in 14 days
-  eventDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+  photoUrl: null,
+  eventTitle: '',
+  eventDate: null,
 }
 
 export const INITIAL_MOCK_GIFTS: Gift[] = [
