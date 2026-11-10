@@ -28,6 +28,7 @@ export const gifts = table('gifts', {
   currency: text('currency').default('RUB'),
   url: text('url'), // Online store link
   imageUrl: text('image_url'), // Image URL
+  description: text('description'), // Creator notes & wishes
   categoryId: text('category_id').default('other'),
   priority: integer('priority').default(1), // 1 (хочу), 2 (очень хочу), 3 (мечта)
   isCrowdfund: boolean('is_crowdfund').default(false), // 1 = enabled crowdfunding

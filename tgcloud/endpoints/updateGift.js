@@ -36,6 +36,7 @@ export default async function (input, ctx) {
   const categoryId = input.categoryId !== undefined ? input.categoryId.trim() : existing.categoryId
   const url = input.url !== undefined ? input.url.trim() : existing.url
   const imageUrl = input.imageUrl !== undefined ? input.imageUrl.trim() : existing.imageUrl
+  const description = input.description !== undefined ? (input.description?.trim() || null) : existing.description
 
   await db.update(gifts).set({
     title,
@@ -46,6 +47,7 @@ export default async function (input, ctx) {
     categoryId,
     url,
     imageUrl,
+    description,
   }).where(and(eq(gifts.id, giftId), eq(gifts.userId, caller.id))).run()
 
   return {

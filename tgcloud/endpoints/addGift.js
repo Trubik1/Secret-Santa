@@ -19,6 +19,7 @@ export default async function (input, ctx) {
   const categoryId = input.categoryId?.trim() || 'other'
   const url = input.url?.trim() || null
   const imageUrl = input.imageUrl?.trim() || null
+  const description = input.description?.trim() || null
 
   const id = crypto.randomUUID()
 
@@ -30,6 +31,7 @@ export default async function (input, ctx) {
     currency: 'RUB',
     url,
     imageUrl,
+    description,
     categoryId,
     priority,
     isCrowdfund,

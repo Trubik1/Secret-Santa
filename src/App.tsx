@@ -11,9 +11,9 @@ import {
 import { parseWildberriesClient } from './api/clientParser'
 import { CurrencyMode } from './utils/currency'
 import { fireConfetti } from './utils/confetti'
-import { DesignTheme, THEME_OPTIONS } from './utils/theme'
 import { HeroProfile } from './components/HeroProfile'
 import { GiftCard } from './components/GiftCard'
+import { GiftDetailModal } from './components/GiftDetailModal'
 import { AddGiftModal } from './components/AddGiftModal'
 import { PledgeModal } from './components/PledgeModal'
 import { BudgetHelperModal } from './components/BudgetHelperModal'
@@ -38,25 +38,19 @@ export function App() {
   const [data, setData] = useState<WishlistData | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Currency preference (defaults to 'both' dual RUB + BYN)
+  // Single Currency Preference (defaults to 'byn')
   const [currencyMode, setCurrencyMode] = useState<CurrencyMode>(() => {
     try {
-      return (localStorage.getItem('wishlist_curr') as CurrencyMode) || 'both'
+      const saved = localStorage.getItem('wishlist_curr') as CurrencyMode
+      if (saved && saved !== ('both' as any)) return saved
+      return 'byn'
     } catch (_) {
-      return 'both'
-    }
-  })
-
-  // 5 Design & Typography Styles (defaults to 'inter')
-  const [designTheme, setDesignTheme] = useState<DesignTheme>(() => {
-    try {
-      return (localStorage.getItem('wishlist_theme') as DesignTheme) || 'inter'
-    } catch (_) {
-      return 'inter'
+      return 'byn'
     }
   })
 
   // Modals state
+  const [selectedGiftDetail, setSelectedGiftDetail] = useState<Gift | null>(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingGift, setEditingGift] = useState<Gift | null>(null)
   const [pledgingGift, setPledgingGift] = useState<Gift | null>(null)
@@ -72,24 +66,11 @@ export function App() {
     setTimeout(() => setToast(null), 3000)
   }, [])
 
-  // Active theme object
-  const activeTheme = useMemo(() => {
-    return THEME_OPTIONS.find((t) => t.id === designTheme) || THEME_OPTIONS[0]
-  }, [designTheme])
-
   const handleSelectCurrency = (c: CurrencyMode) => {
     haptics.selection()
     setCurrencyMode(c)
     try {
       localStorage.setItem('wishlist_curr', c)
-    } catch (_) {}
-  }
-
-  const handleSelectTheme = (t: DesignTheme) => {
-    haptics.selection()
-    setDesignTheme(t)
-    try {
-      localStorage.setItem('wishlist_theme', t)
     } catch (_) {}
   }
 
@@ -144,6 +125,7 @@ export function App() {
 
   const handleEditGift = (gift: Gift) => {
     haptics.impact('light')
+    setSelectedGiftDetail(null)
     setEditingGift(gift)
     setIsAddModalOpen(true)
   }
@@ -164,6 +146,7 @@ export function App() {
     if (!window.confirm(`Удалить "${gift.title}" из вишлиста?`)) return
     haptics.impact('medium')
     try {
+      setSelectedGiftDetail(null)
       await serverlessCall('deleteGift', { id: gift.id })
       showToast('Желание удалено')
       await loadWishlist()
@@ -200,6 +183,7 @@ export function App() {
 
   const handleOpenPledge = (gift: Gift) => {
     haptics.impact('light')
+    setSelectedGiftDetail(null)
     setPledgingGift(gift)
   }
 
@@ -207,7 +191,7 @@ export function App() {
     await serverlessCall('pledgeGift', { giftId, amount })
     haptics.notification('success')
     fireConfetti()
-    showToast(`Вы внесли ${amount.toLocaleString('ru-RU')} ₽! Спасибо 🤝`)
+    showToast(`Вы внесли вклад! Спасибо 🤝`)
     await loadWishlist()
   }
 
@@ -224,7 +208,7 @@ export function App() {
   const handleSaveProfile = async (eventTitle: string, eventDate: string | null) => {
     await serverlessCall('updateProfile', { eventTitle, eventDate })
     haptics.notification('success')
-    showToast('Настройки праздника сохранены ✨')
+    showToast('Настройки вишлиста сохранены ✨')
     await loadWishlist()
   }
 
@@ -257,17 +241,11 @@ export function App() {
   }
 
   const handleSelectGiftFromHelper = (gift: Gift) => {
-    if (gift.isCrowdfund) {
-      handleOpenPledge(gift)
-    } else {
-      handleBookGift(gift)
-    }
+    setSelectedGiftDetail(gift)
   }
 
   return (
-    <div
-      className={`min-h-screen bg-bg-light dark:bg-bg-dark text-ink-light dark:text-ink-dark flex flex-col ${activeTheme.fontClass} selection:bg-surface-soft selection:text-accent-rose overflow-x-hidden`}
-    >
+    <div className="min-h-screen bg-bg-light dark:bg-bg-dark text-ink-light dark:text-ink-dark flex flex-col font-inter selection:bg-surface-soft selection:text-accent-rose overflow-x-hidden">
       {/* Dev Tools Bar in standalone browser only */}
       {!isTelegramServerlessAvailable() && !isInsideTelegram && (
         <DevToolsBar
@@ -293,7 +271,6 @@ export function App() {
               profile={data.profile}
               isOwner={data.isOwner}
               stats={data.stats}
-              theme={activeTheme}
               onOpenShare={handleShareWishlist}
               onOpenSettings={() => setIsSettingsModalOpen(true)}
               onHaptic={() => haptics.impact('light')}
@@ -301,9 +278,9 @@ export function App() {
 
             {/* Direct Gifts Feed Header */}
             {giftsFeed.length > 0 && (
-              <div className="px-4 pt-2 pb-1.5 flex items-center justify-between">
+              <div className="px-4 pt-2.5 pb-1.5 flex items-center justify-between">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-ink-muted">
-                  Список желаний ({giftsFeed.length})
+                  Желания ({giftsFeed.length})
                 </span>
 
                 {!data.isOwner && giftsFeed.length > 2 && (
@@ -321,35 +298,28 @@ export function App() {
               </div>
             )}
 
-            {/* Unified Gifts Grid */}
+            {/* CONCEPT 1: APPLE BOUTIQUE 2-COLUMN MINIMALIST GRID */}
             <div className="px-4 mt-1">
               {giftsFeed.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {giftsFeed.map((gift) => (
                     <GiftCard
                       key={gift.id}
                       gift={gift}
                       isOwner={data.isOwner}
                       currencyMode={currencyMode}
-                      theme={activeTheme}
-                      onBook={handleBookGift}
-                      onUnbook={handleUnbookGift}
-                      onPledge={handleOpenPledge}
-                      onEdit={handleEditGift}
-                      onDelete={handleDeleteGift}
-                      onOpenLink={openLink}
+                      onSelect={(g) => setSelectedGiftDetail(g)}
+                      onHaptic={() => haptics.impact('light')}
                     />
                   ))}
                 </div>
               ) : (
-                /* Empty state */
-                <div
-                  className={`p-8 text-center bg-surface-card dark:bg-surface-card-dark ${activeTheme.cardRadius} border border-border-soft dark:border-border-soft-dark mt-4 relative overflow-hidden`}
-                >
+                /* Clean Empty state */
+                <div className="p-8 text-center bg-surface-card dark:bg-[#17171a] rounded-3xl border border-border-soft dark:border-[#34252f] mt-4 relative overflow-hidden">
                   <div className="w-16 h-16 rounded-full bg-accent-rose/10 text-accent-rose flex items-center justify-center mx-auto mb-3">
                     <Plus size={28} />
                   </div>
-                  <h3 className={`font-extrabold text-base text-ink-light dark:text-ink-dark ${activeTheme.headingFont}`}>
+                  <h3 className="font-black text-base text-ink-light dark:text-ink-dark">
                     Список желаний пока пуст
                   </h3>
                   <p className="text-xs text-ink-muted mt-1 max-w-xs mx-auto">
@@ -360,7 +330,7 @@ export function App() {
                   {data.isOwner && (
                     <button
                       onClick={handleOpenAddModal}
-                      className="mt-4 px-5 py-2.5 rounded-full bg-accent-rose text-white text-xs font-extrabold inline-flex items-center gap-1.5 shadow-md shadow-accent-rose/20 active-press hover:bg-accent-rose-hover transition-all"
+                      className="mt-4 px-5 py-2.5 rounded-full bg-accent-rose text-white text-xs font-black inline-flex items-center gap-1.5 shadow-md shadow-accent-rose/20 active-press hover:bg-accent-rose-hover transition-all"
                     >
                       <Plus size={15} />
                       Добавить первое желание
@@ -383,10 +353,26 @@ export function App() {
         />
       )}
 
-      {/* Modals */}
+      {/* Pop-up Gift Detail Modal (Bottom Sheet on Card Tap) */}
+      <GiftDetailModal
+        gift={selectedGiftDetail}
+        isOwner={data?.isOwner ?? false}
+        currencyMode={currencyMode}
+        onClose={() => setSelectedGiftDetail(null)}
+        onEdit={handleEditGift}
+        onDelete={handleDeleteGift}
+        onBook={handleBookGift}
+        onUnbook={handleUnbookGift}
+        onPledge={handleOpenPledge}
+        onOpenLink={openLink}
+        onHaptic={() => haptics.impact('light')}
+      />
+
+      {/* Add / Edit Gift Modal */}
       <AddGiftModal
         isOpen={isAddModalOpen}
         initialGift={editingGift}
+        currencyMode={currencyMode}
         onClose={() => {
           setIsAddModalOpen(false)
           setEditingGift(null)
@@ -396,26 +382,27 @@ export function App() {
         onHaptic={() => haptics.impact('light')}
       />
 
+      {/* Crowdfund Pledge Modal */}
       <PledgeModal
         isOpen={Boolean(pledgingGift)}
         gift={pledgingGift}
+        currencyMode={currencyMode}
         onClose={() => setPledgingGift(null)}
         onConfirmPledge={handleConfirmPledge}
         onOpenTelegramLink={openTelegramLink}
         onHaptic={() => haptics.impact('light')}
       />
 
+      {/* Settings Modal (Single Currency, Dark/Light, Holiday Date) */}
       {data && (
         <SettingsModal
           isOpen={isSettingsModalOpen}
           profile={data.profile}
           isOwner={data.isOwner}
           currencyMode={currencyMode}
-          designTheme={designTheme}
           colorScheme={colorScheme}
           onClose={() => setIsSettingsModalOpen(false)}
           onSelectCurrency={handleSelectCurrency}
-          onSelectTheme={handleSelectTheme}
           onToggleColorScheme={handleToggleTheme}
           onSaveProfile={handleSaveProfile}
           onHaptic={() => haptics.impact('light')}
@@ -423,17 +410,20 @@ export function App() {
         />
       )}
 
+      {/* Budget Helper Modal */}
       {data && (
         <BudgetHelperModal
           isOpen={isBudgetModalOpen}
           gifts={data.gifts}
           isOwner={data.isOwner}
+          currencyMode={currencyMode}
           onClose={() => setIsBudgetModalOpen(false)}
           onSelectGift={handleSelectGiftFromHelper}
           onHaptic={() => haptics.impact('medium')}
         />
       )}
 
+      {/* Share Modal */}
       {data && (
         <ShareModal
           isOpen={isShareModalOpen}
@@ -457,4 +447,5 @@ export function App() {
     </div>
   )
 }
+
 export default App

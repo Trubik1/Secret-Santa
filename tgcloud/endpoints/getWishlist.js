@@ -30,6 +30,10 @@ export default async function (input, ctx) {
     } else {
       throw new EndpointError('Вишлист не найден', { code: 'NOT_FOUND' })
     }
+  } else if (isOwner && caller.photo_url && profile.photoUrl !== caller.photo_url) {
+    // Keep user's real Telegram avatar synchronized
+    await db.update(users).set({ photoUrl: caller.photo_url }).where(eq(users.id, caller.id)).run()
+    profile.photoUrl = caller.photo_url
   }
 
   // 2. Fetch all gifts for this owner
@@ -93,6 +97,7 @@ export default async function (input, ctx) {
         currency: g.currency,
         url: g.url,
         imageUrl: g.imageUrl,
+        description: g.description || null,
         categoryId: g.categoryId,
         priority: g.priority,
         isCrowdfund: Boolean(g.isCrowdfund),
@@ -119,6 +124,7 @@ export default async function (input, ctx) {
         currency: g.currency,
         url: g.url,
         imageUrl: g.imageUrl,
+        description: g.description || null,
         categoryId: g.categoryId,
         priority: g.priority,
         isCrowdfund: Boolean(g.isCrowdfund),
@@ -161,7 +167,7 @@ export default async function (input, ctx) {
     },
     stats: {
       totalGifts: rawGifts.length,
-      bookedGifts: bookedCount, // General counter shown to owner
+      bookedGifts: isOwner ? 0 : bookedCount, // Complete secrecy for owner
     },
     gifts: processedGifts,
   }

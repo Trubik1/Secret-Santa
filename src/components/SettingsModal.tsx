@@ -1,19 +1,16 @@
 import React, { useState } from 'react'
 import { UserProfile } from '../types'
 import { CurrencyMode, ALL_CURRENCIES } from '../utils/currency'
-import { DesignTheme, THEME_OPTIONS } from '../utils/theme'
-import { X, Settings, Coins, Palette, Moon, Sun, Calendar, Sparkles, Check } from 'lucide-react'
+import { X, Settings, Coins, Moon, Sun, Calendar, Check, Trash2 } from 'lucide-react'
 
 interface SettingsModalProps {
   isOpen: boolean
   profile: UserProfile
   isOwner: boolean
   currencyMode: CurrencyMode
-  designTheme: DesignTheme
   colorScheme: 'light' | 'dark'
   onClose: () => void
   onSelectCurrency: (c: CurrencyMode) => void
-  onSelectTheme: (t: DesignTheme) => void
   onToggleColorScheme: () => void
   onSaveProfile: (eventTitle: string, eventDate: string | null) => Promise<void>
   onHaptic: () => void
@@ -25,11 +22,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   profile,
   isOwner,
   currencyMode,
-  designTheme,
   colorScheme,
   onClose,
   onSelectCurrency,
-  onSelectTheme,
   onToggleColorScheme,
   onSaveProfile,
   onHaptic,
@@ -37,18 +32,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [eventTitle, setEventTitle] = useState(profile.eventTitle || '')
   const [eventDate, setEventDate] = useState(profile.eventDate || '')
-  const [activeTab, setActiveTab] = useState<'currency' | 'design' | 'profile'>('currency')
+  const [activeTab, setActiveTab] = useState<'currency' | 'profile'>('currency')
   const [isSaving, setIsSaving] = useState(false)
 
   if (!isOpen) return null
+
+  const todayString = new Date().toISOString().split('T')[0]
 
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
     onHaptic()
     try {
-      await onSaveProfile(eventTitle.trim() || 'Мой День Рождения 🎂', eventDate || null)
-      onShowToast('Настройки события сохранены ✨')
+      await onSaveProfile(eventTitle.trim(), eventDate || null)
+      onShowToast('Настройки вишлиста сохранены ✨')
     } catch (_) {
       onShowToast('Не удалось сохранить')
     } finally {
@@ -56,68 +53,94 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   }
 
+  const handleClearEvent = async () => {
+    setEventTitle('')
+    setEventDate('')
+    setIsSaving(true)
+    onHaptic()
+    try {
+      await onSaveProfile('', null)
+      onShowToast('Привязка к празднику отключена ✨')
+    } catch (_) {
+      onShowToast('Ошибка сброса')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
       <div
-        className="w-full max-w-lg bg-bg-light dark:bg-bg-dark rounded-t-32 sm:rounded-32 p-6 shadow-2xl border border-border-soft dark:border-border-soft-dark max-h-[90vh] overflow-y-auto no-scrollbar flex flex-col justify-between"
+        className="w-full max-w-md bg-surface-card dark:bg-[#17171a] rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-border-soft dark:border-[#34252f] max-h-[90vh] overflow-y-auto flex flex-col justify-between"
         onClick={(e) => e.stopPropagation()}
       >
         <div>
           {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-border-soft dark:border-border-soft-dark">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between pb-3 border-b border-border-soft dark:border-[#34252f]">
+            <div className="flex items-center gap-2.5">
               <span className="p-2 rounded-xl bg-accent-rose/10 text-accent-rose">
                 <Settings size={18} />
               </span>
               <div>
-                <h2 className="text-base font-extrabold text-ink-light dark:text-ink-dark">
-                  Настройки вишлиста
+                <h2 className="text-base font-black text-ink-light dark:text-white">
+                  Настройки
                 </h2>
                 <p className="text-[11px] text-ink-muted">
-                  Валюты, дизайн, шрифты и тема
+                  Валюта, тема и настройки вишлиста
                 </p>
               </div>
             </div>
             <button
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-surface-card dark:hover:bg-surface-card-dark text-ink-muted transition-colors"
+              onClick={() => {
+                onHaptic()
+                onClose()
+              }}
+              className="p-1.5 rounded-full text-ink-muted hover:text-ink-light dark:hover:text-white transition-colors"
             >
               <X size={18} />
             </button>
           </div>
 
+          {/* Quick Theme Switcher (Dark / Light) */}
+          <div className="mt-3.5 p-3 rounded-2xl bg-surface-soft dark:bg-[#241920]/60 border border-border-soft dark:border-[#34252f] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {colorScheme === 'dark' ? (
+                <Moon size={16} className="text-amber-400" />
+              ) : (
+                <Sun size={16} className="text-amber-500" />
+              )}
+              <span className="text-xs font-bold text-ink-light dark:text-white">
+                {colorScheme === 'dark' ? 'Тёмная тема' : 'Светлая тема'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onHaptic()
+                onToggleColorScheme()
+              }}
+              className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 border border-border-soft dark:border-zinc-700 text-xs font-bold text-ink-light dark:text-white active-press"
+            >
+              Переключить
+            </button>
+          </div>
+
           {/* Navigation Tabs */}
-          <div className="mt-4 flex rounded-2xl bg-surface-soft dark:bg-surface-soft-dark p-1 border border-border-soft dark:border-border-soft-dark text-xs font-bold gap-1">
+          <div className="mt-3 flex rounded-xl bg-surface-soft dark:bg-zinc-800/80 p-1 border border-border-soft dark:border-zinc-700 text-xs font-bold gap-1">
             <button
               type="button"
               onClick={() => {
                 onHaptic()
                 setActiveTab('currency')
               }}
-              className={`flex-1 py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 transition-all active-press ${
+              className={`flex-1 py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all active-press ${
                 activeTab === 'currency'
-                  ? 'bg-white dark:bg-zinc-800 text-accent-rose shadow-sm font-extrabold'
-                  : 'text-ink-muted hover:text-ink-light'
+                  ? 'bg-white dark:bg-[#241920] text-accent-rose shadow-sm font-black'
+                  : 'text-ink-muted hover:text-ink-light dark:hover:text-white'
               }`}
             >
               <Coins size={14} />
-              <span>Валюта</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                onHaptic()
-                setActiveTab('design')
-              }}
-              className={`flex-1 py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 transition-all active-press ${
-                activeTab === 'design'
-                  ? 'bg-white dark:bg-zinc-800 text-accent-rose shadow-sm font-extrabold'
-                  : 'text-ink-muted hover:text-ink-light'
-              }`}
-            >
-              <Palette size={14} />
-              <span>5 Стилей</span>
+              <span>Валюта отображения</span>
             </button>
 
             {isOwner && (
@@ -127,224 +150,134 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   onHaptic()
                   setActiveTab('profile')
                 }}
-                className={`flex-1 py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 transition-all active-press ${
+                className={`flex-1 py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all active-press ${
                   activeTab === 'profile'
-                    ? 'bg-white dark:bg-zinc-800 text-accent-rose shadow-sm font-extrabold'
-                    : 'text-ink-muted hover:text-ink-light'
+                    ? 'bg-white dark:bg-[#241920] text-accent-rose shadow-sm font-black'
+                    : 'text-ink-muted hover:text-ink-light dark:hover:text-white'
                 }`}
               >
                 <Calendar size={14} />
-                <span>Событие</span>
+                <span>Праздник / Дата</span>
               </button>
             )}
           </div>
 
-          {/* Tab 1: Currency Selection */}
+          {/* Tab 1: Currency Selection (Strictly Single Currencies, No "Both") */}
           {activeTab === 'currency' && (
-            <div className="mt-5 space-y-2.5 animate-fade-in">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-extrabold text-ink-muted uppercase tracking-wider">
-                  Выберите валюту отображения
-                </span>
-                <span className="text-[11px] font-bold text-accent-rose">
-                  Курсы авто-конвертации
-                </span>
-              </div>
-
+            <div className="mt-3.5 space-y-2">
+              <p className="text-[11px] text-ink-muted mb-2 font-medium">
+                Выберите валюту. Все цены в вишлисте и формах будут отображаться строго в ней:
+              </p>
               {ALL_CURRENCIES.map((c) => {
                 const isSelected = currencyMode === c.id
                 return (
-                  <div
-                    key={c.id}
-                    onClick={() => {
-                      onHaptic()
-                      onSelectCurrency(c.id)
-                      onShowToast(`Валюта: ${c.name} (${c.symbol})`)
-                    }}
-                    className={`p-3.5 rounded-24 border cursor-pointer transition-all active-press flex items-center justify-between ${
-                      isSelected
-                        ? 'bg-accent-rose/10 border-accent-rose shadow-sm'
-                        : 'bg-surface-card dark:bg-surface-card-dark border-border-soft dark:border-border-soft-dark hover:border-accent-rose/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl select-none">{c.flag}</span>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-xs font-extrabold text-ink-light dark:text-ink-dark">
-                            {c.name}
-                          </h4>
-                          <span className="text-[11px] font-mono px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-ink-muted font-bold">
-                            {c.symbol}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-ink-muted mt-0.5">
-                          {c.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                        isSelected
-                          ? 'bg-accent-rose text-white'
-                          : 'border border-border-soft dark:border-border-soft-dark bg-surface-soft dark:bg-surface-soft-dark text-transparent'
-                      }`}
-                    >
-                      <Check size={14} strokeWidth={3} />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Tab 2: 5 Design & Typography Styles */}
-          {activeTab === 'design' && (
-            <div className="mt-5 space-y-3 animate-fade-in">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-extrabold text-ink-muted uppercase tracking-wider">
-                  5 Вариантов шрифта и стиля
-                </span>
-                <span className="text-[11px] font-bold text-accent-rose">
-                  Жмите для примерки
-                </span>
-              </div>
-
-              {THEME_OPTIONS.map((t) => {
-                const isSelected = designTheme === t.id
-                return (
-                  <div
-                    key={t.id}
-                    onClick={() => {
-                      onHaptic()
-                      onSelectTheme(t.id)
-                      onShowToast(`Выбран стиль: ${t.name}`)
-                    }}
-                    className={`p-4 rounded-24 border cursor-pointer transition-all active-press ${
-                      isSelected
-                        ? 'bg-accent-rose/10 border-accent-rose shadow-md'
-                        : 'bg-surface-card dark:bg-surface-card-dark border-border-soft dark:border-border-soft-dark hover:border-accent-rose/50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-accent-rose block mb-0.5">
-                          {t.subtitle}
-                        </span>
-                        <h4 className={`text-sm ${t.headingFont} text-ink-light dark:text-ink-dark`}>
-                          {t.name}
-                        </h4>
-                      </div>
-
-                      <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                          isSelected
-                            ? 'bg-accent-rose text-white'
-                            : 'border border-border-soft dark:border-border-soft-dark bg-surface-soft dark:bg-surface-soft-dark text-transparent'
-                        }`}
-                      >
-                        <Check size={14} strokeWidth={3} />
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-ink-muted mt-1 leading-snug">
-                      {t.description}
-                    </p>
-
-                    {/* Mini live visual badge */}
-                    <div className="mt-2.5 flex items-center gap-2">
-                      <span className={`px-2.5 py-1 text-[11px] font-semibold bg-white/80 dark:bg-zinc-800/80 rounded-lg border border-border-soft dark:border-border-soft-dark text-ink-light dark:text-ink-dark ${t.fontClass}`}>
-                        Образец: 14 990 ₽ (~508 Br) · Мечта ✨
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
-
-              {/* Dark / Light Toggle inside design tab */}
-              <div className="pt-2">
-                <div className="p-3.5 rounded-24 bg-surface-soft dark:bg-surface-soft-dark border border-border-soft dark:border-border-soft-dark flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-ink-light dark:text-ink-dark">
-                      Тема оформления
-                    </p>
-                    <p className="text-[11px] text-ink-muted">
-                      {colorScheme === 'dark' ? 'Тёмная тема (Dark mode)' : 'Светлая тема (Light mode)'}
-                    </p>
-                  </div>
                   <button
+                    key={c.id}
                     type="button"
                     onClick={() => {
                       onHaptic()
-                      onToggleColorScheme()
+                      onSelectCurrency(c.id)
+                      onShowToast(`Валюта: ${c.name}`)
                     }}
-                    className="p-2.5 rounded-full bg-white dark:bg-zinc-800 text-ink-light dark:text-ink-dark border border-border-soft dark:border-border-soft-dark shadow-sm active-press hover:text-accent-rose"
+                    className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all active-press ${
+                      isSelected
+                        ? 'border-[#c4457b] bg-[#241920]/70 text-ink-light dark:text-white ring-1 ring-[#c4457b]'
+                        : 'border-border-soft dark:border-[#34252f] hover:border-zinc-500 bg-surface-soft/60 dark:bg-[#17171a]'
+                    }`}
                   >
-                    {colorScheme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl shrink-0">{c.flag}</span>
+                      <div>
+                        <div className="text-xs font-black text-ink-light dark:text-white flex items-center gap-1.5">
+                          <span>{c.name}</span>
+                          <span className="px-1.5 py-0.5 rounded-md bg-zinc-200 dark:bg-zinc-800 text-[10px] text-[#c4457b] font-black">
+                            {c.symbol}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-ink-muted mt-0.5">{c.description}</div>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <span className="w-6 h-6 rounded-full bg-[#c4457b] text-white flex items-center justify-center shrink-0">
+                        <Check size={14} strokeWidth={3} />
+                      </span>
+                    )}
                   </button>
-                </div>
-              </div>
+                )
+              })}
             </div>
           )}
 
-          {/* Tab 3: Profile & Event Date */}
+          {/* Tab 2: Profile / Event Settings (Optional, cannot pick past dates) */}
           {activeTab === 'profile' && isOwner && (
-            <form onSubmit={handleSaveEvent} className="mt-5 space-y-4 animate-fade-in">
+            <form onSubmit={handleSaveEvent} className="mt-3.5 space-y-3.5">
+              <p className="text-[11px] text-ink-muted font-medium">
+                Вишлист можно привязать к событию (День Рождения, Новый Год) или оставить бессрочным:
+              </p>
+
               <div>
-                <label className="block text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider mb-1.5">
-                  Название события / праздника
+                <label className="block text-[11px] font-extrabold uppercase tracking-wider text-ink-muted mb-1">
+                  Название праздника (необязательно)
                 </label>
                 <input
                   type="text"
-                  required
-                  placeholder="Например, Мой 25-й День Рождения 🎂"
+                  placeholder="Например, День Рождения 🎂 (или пусто)"
                   value={eventTitle}
                   onChange={(e) => setEventTitle(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-sm text-ink-light dark:text-ink-dark font-medium focus:outline-none focus:ring-2 focus:ring-accent-rose"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-soft dark:bg-zinc-800/80 border border-border-soft dark:border-zinc-700 text-xs font-bold text-ink-light dark:text-white focus:outline-none focus:border-[#c4457b]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider mb-1.5">
-                  Дата праздника (для обратного отсчета)
+                <label className="block text-[11px] font-extrabold uppercase tracking-wider text-ink-muted mb-1">
+                  Дата события (только будущие даты)
                 </label>
                 <input
                   type="date"
+                  min={todayString}
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-sm text-ink-light dark:text-ink-dark font-medium focus:outline-none focus:ring-2 focus:ring-accent-rose"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-soft dark:bg-zinc-800/80 border border-border-soft dark:border-zinc-700 text-xs font-bold text-ink-light dark:text-white focus:outline-none focus:border-[#c4457b]"
                 />
+                <p className="mt-1 text-[10px] text-zinc-500">
+                  Выбрать старую дату невозможно. Если дату не указывать — таймер будет скрыт.
+                </p>
               </div>
 
-              {/* Surprise mode disclaimer */}
-              <div className="p-3.5 rounded-24 bg-accent-rose/10 border border-accent-rose/20 text-xs text-accent-rose dark:text-accent-rose-dark flex items-start gap-2.5">
-                <Sparkles size={16} className="shrink-0 mt-0.5" />
-                <div>
-                  <b className="block">Режим сюрприза включён 🤫</b>
-                  <span className="text-[11px] opacity-90 leading-snug block mt-0.5">
-                    Вы видите только общий счётчик забронированных подарков. Имена дарителей скрыты от вас до наступления праздника!
-                  </span>
-                </div>
-              </div>
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="flex-1 py-3 rounded-full bg-[#c4457b] hover:bg-[#b03b6d] text-white text-xs font-black shadow-md shadow-[#c4457b]/25 active-press transition-all"
+                >
+                  {isSaving ? 'Сохранение...' : 'Сохранить'}
+                </button>
 
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="w-full py-3.5 rounded-full bg-accent-rose text-white font-extrabold text-sm active-press shadow-md shadow-accent-rose/25 hover:bg-accent-rose-hover transition-all"
-              >
-                {isSaving ? 'Сохранение...' : 'Сохранить событие ✨'}
-              </button>
+                {(eventTitle || eventDate) && (
+                  <button
+                    type="button"
+                    onClick={handleClearEvent}
+                    disabled={isSaving}
+                    title="Сделать вишлист бессрочным"
+                    className="p-3 rounded-full bg-surface-soft dark:bg-zinc-800 border border-border-soft dark:border-zinc-700 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 active-press"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
             </form>
           )}
         </div>
 
         {/* Footer close button */}
-        <div className="pt-5 mt-4 border-t border-border-soft dark:border-border-soft-dark">
+        <div className="pt-4 mt-4 border-t border-border-soft dark:border-[#34252f]">
           <button
             type="button"
-            onClick={onClose}
-            className="w-full py-3 rounded-full bg-surface-soft dark:bg-surface-soft-dark text-ink-light dark:text-ink-dark font-bold text-xs active-press border border-border-soft dark:border-border-soft-dark hover:bg-surface-card transition-colors"
+            onClick={() => {
+              onHaptic()
+              onClose()
+            }}
+            className="w-full py-2.5 rounded-xl bg-surface-soft dark:bg-zinc-800 text-ink-light dark:text-zinc-300 text-xs font-extrabold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
           >
             Готово
           </button>

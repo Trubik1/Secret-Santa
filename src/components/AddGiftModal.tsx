@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from 'react'
-import { Gift, CategoryId, Priority } from '../types'
-import { X, Search, Loader2, Sparkles, Image, Link, Check, AlertCircle } from 'lucide-react'
-import { formatByn, formatRub, rubToByn, bynToRub } from '../utils/currency'
+import { Gift, Priority } from '../types'
+import { X, Search, Loader2, Check, AlertCircle, Lock, Unlock } from 'lucide-react'
+import {
+  CurrencyMode,
+  getCurrencySymbol,
+  convertRubTo,
+  convertToRub,
+  MAX_LIMITS,
+} from '../utils/currency'
 
 interface AddGiftModalProps {
   isOpen: boolean
   initialGift?: Gift | null
+  currencyMode: CurrencyMode
   onClose: () => void
   onSave: (giftData: Partial<Gift>) => Promise<void>
   onParseUrl: (url: string) => Promise<{ title: string; imageUrl: string; price: number; categoryId?: string; parsed: boolean }>
   onHaptic: () => void
 }
 
-const CATEGORIES: { id: CategoryId; title: string }[] = [
-  { id: 'gadgets', title: 'Гаджеты' },
-  { id: 'clothes', title: 'Одежда' },
-  { id: 'home', title: 'Для дома' },
-  { id: 'books', title: 'Книги' },
-  { id: 'other', title: 'Другое' },
-]
-
 export const AddGiftModal: React.FC<AddGiftModalProps> = ({
   isOpen,
   initialGift,
+  currencyMode,
   onClose,
   onSave,
   onParseUrl,
@@ -31,42 +31,48 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
   const [price, setPrice] = useState('')
-  const [inputCurrency, setInputCurrency] = useState<'rub' | 'byn'>('rub')
+  const [description, setDescription] = useState('')
   const [imageUrl, setImageUrl] = useState('')
-  const [categoryId, setCategoryId] = useState<CategoryId>('other')
   const [priority, setPriority] = useState<Priority>(1)
-  const [isCrowdfund, setIsCrowdfund] = useState(false)
+
+  // Price lock for auto-parsed items to prevent accidental edits
+  const [isPriceLocked, setIsPriceLocked] = useState(false)
 
   const [isParsing, setIsParsing] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [parseSuccess, setParseSuccess] = useState(false)
   const [parseError, setParseError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
+
+  const currSymbol = getCurrencySymbol(currencyMode)
+  const maxLimit = MAX_LIMITS[currencyMode] || 5000
 
   useEffect(() => {
     if (initialGift) {
       setTitle(initialGift.title || '')
-      setPrice(initialGift.price ? String(initialGift.price) : '')
-      setInputCurrency('rub')
+      const convertedPrice = initialGift.price ? convertRubTo(initialGift.price, currencyMode) : ''
+      setPrice(convertedPrice ? String(convertedPrice) : '')
+      setDescription(initialGift.description || '')
       setUrl(initialGift.url || '')
       setImageUrl(initialGift.imageUrl || '')
-      setCategoryId((initialGift.categoryId as CategoryId) || 'other')
       setPriority(initialGift.priority || 1)
-      setIsCrowdfund(Boolean(initialGift.isCrowdfund))
+      setIsPriceLocked(false)
       setParseSuccess(false)
       setParseError(null)
+      setFormError(null)
     } else {
       setTitle('')
       setPrice('')
-      setInputCurrency('rub')
+      setDescription('')
       setUrl('')
       setImageUrl('')
-      setCategoryId('other')
       setPriority(1)
-      setIsCrowdfund(false)
+      setIsPriceLocked(false)
       setParseSuccess(false)
       setParseError(null)
+      setFormError(null)
     }
-  }, [initialGift, isOpen])
+  }, [initialGift, isOpen, currencyMode])
 
   if (!isOpen) return null
 
@@ -75,25 +81,24 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
     setIsParsing(true)
     setParseSuccess(false)
     setParseError(null)
+    setFormError(null)
     onHaptic()
     try {
       const res = await onParseUrl(url.trim())
       if (res && res.parsed && (res.title || res.price || res.imageUrl)) {
         if (res.title) setTitle(res.title)
         if (res.price) {
-          setInputCurrency('rub')
-          setPrice(String(res.price))
+          const converted = convertRubTo(res.price, currencyMode)
+          setPrice(String(converted))
+          setIsPriceLocked(true) // Lock price from accidental modification
         }
         if (res.imageUrl) setImageUrl(res.imageUrl)
-        if (res.categoryId && CATEGORIES.some(c => c.id === res.categoryId)) {
-          setCategoryId(res.categoryId as CategoryId)
-        }
         setParseSuccess(true)
       } else {
-        setParseError('Данные не распознаны автоматически. Пожалуйста, заполните поля ниже вручную.')
+        setParseError('Не удалось автоматически извлечь данные. Заполните поля ниже вручную.')
       }
     } catch (err: any) {
-      setParseError(err.message || 'Ошибка парсинга ссылки')
+      setParseError(err.message || 'Ошибка загрузки данных по ссылке')
     } finally {
       setIsParsing(false)
     }
@@ -103,11 +108,20 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
     e.preventDefault()
     if (!title.trim() || isSubmitting) return
 
+    setFormError(null)
+    const rawNum = parseFloat(price.replace(',', '.')) || 0
+
+    // Price limit check (equivalent of $5,000 max)
+    if (rawNum > maxLimit) {
+      setFormError(`Цена не может превышать ${maxLimit.toLocaleString('ru-RU')} ${currSymbol} (эквивалент $5 000).`)
+      onHaptic()
+      return
+    }
+
     setIsSubmitting(true)
     onHaptic()
     try {
-      const rawNum = parseFloat(price) || 0
-      const parsedPriceInRub = inputCurrency === 'byn' ? bynToRub(rawNum) : Math.round(rawNum)
+      const parsedPriceInRub = rawNum > 0 ? convertToRub(rawNum, currencyMode) : 0
 
       let cleanUrl = url.trim()
       if (cleanUrl && !/^https?:\/\//i.test(cleanUrl)) {
@@ -122,207 +136,185 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
       await onSave({
         title: title.trim(),
         price: parsedPriceInRub,
+        currency: 'RUB',
+        description: description.trim() || null,
         url: cleanUrl || null,
         imageUrl: cleanImg || null,
-        categoryId,
         priority,
-        isCrowdfund,
-        // Target amount is automatically the gift's price
-        targetAmount: isCrowdfund ? parsedPriceInRub : 0,
+        isCrowdfund: false, // Crowdfunding is dynamic for friends on items >= 3000 RUB
       })
       onClose()
-    } catch (err) {
-      console.error('Error saving gift:', err)
-      // Close anyway if item was actually saved or handled
-      onClose()
+    } catch (err: any) {
+      setFormError(err.message || 'Не удалось сохранить подарок')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-lg bg-bg-light dark:bg-bg-dark rounded-t-32 sm:rounded-32 p-6 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar border border-border-soft dark:border-border-soft-dark"
+        className="w-full max-w-md bg-surface-card dark:bg-[#17171a] border-t sm:border border-border-soft dark:border-[#34252f] rounded-t-3xl sm:rounded-3xl p-5 max-h-[92vh] overflow-y-auto shadow-2xl animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-border-soft dark:border-border-soft-dark">
-          <h2 className="text-lg font-extrabold text-ink-light dark:text-ink-dark">
-            {initialGift ? 'Редактировать желание' : 'Добавить желание 🎁'}
+        {/* Top Header */}
+        <div className="flex items-center justify-between pb-3">
+          <h2 className="text-base font-black text-ink-light dark:text-white">
+            {initialGift ? 'Редактировать желание ✨' : 'Добавить желание 🎁'}
           </h2>
           <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-surface-card dark:hover:bg-surface-card-dark text-ink-muted transition-colors"
+            onClick={() => {
+              onHaptic()
+              onClose()
+            }}
+            className="p-1.5 rounded-full text-ink-muted hover:text-ink-light dark:hover:text-white transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-          {/* Link parser section */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Smart Link Input */}
           <div>
-            <label className="block text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider mb-1.5">
-              Ссылка на товар (Ozon, Wildberries, маркетплейсы)
+            <label className="block text-[11px] font-extrabold uppercase tracking-wider text-ink-muted mb-1.5">
+              Ссылка на товар (Wildberries, Ozon и др.)
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-muted">
-                  <Link size={15} />
-                </span>
                 <input
                   type="text"
                   inputMode="url"
-                  placeholder="https://www.wildberries.ru/catalog/..."
+                  placeholder="https://wildberries.by/catalog/..."
                   value={url}
                   onChange={(e) => {
                     setUrl(e.target.value)
                     setParseSuccess(false)
                     setParseError(null)
                   }}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-xs text-ink-light dark:text-ink-dark placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-accent-rose"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface-soft dark:bg-zinc-800/80 border border-border-soft dark:border-zinc-700 text-xs text-ink-light dark:text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c4457b] transition-all"
                 />
               </div>
               <button
                 type="button"
                 onClick={handleParse}
-                disabled={!url.trim() || isParsing}
-                className="px-4 py-2.5 rounded-2xl bg-accent-rose text-white text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 active-press shrink-0 shadow-sm shadow-accent-rose/20 hover:bg-accent-rose-hover transition-all"
+                disabled={isParsing || !url.trim()}
+                className="px-4 py-2.5 rounded-xl bg-[#c4457b] hover:bg-[#b03b6d] text-white text-xs font-bold active-press disabled:opacity-40 transition-all flex items-center gap-1.5 shrink-0"
               >
-                {isParsing ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : parseSuccess ? (
-                  <Check size={14} />
-                ) : (
-                  <Search size={14} />
-                )}
-                <span>{isParsing ? 'Поиск...' : 'Найти'}</span>
+                {isParsing ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
+                <span>Найти</span>
               </button>
             </div>
+
+            {/* Parse Feedback Status */}
             {parseSuccess && (
-              <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                <Sparkles size={12} />
-                Данные товара успешно подтянуты!
+              <p className="mt-1.5 text-[11px] font-bold text-emerald-500 flex items-center gap-1">
+                <Check size={12} /> Данные товара успешно распознаны!
               </p>
             )}
             {parseError && (
-              <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
-                <AlertCircle size={12} className="shrink-0" />
-                <span>{parseError}</span>
+              <p className="mt-1.5 text-[11px] font-semibold text-amber-500 flex items-center gap-1">
+                <AlertCircle size={12} /> {parseError}
               </p>
             )}
           </div>
 
-          {/* Title */}
+          {/* Title Field */}
           <div>
-            <label className="block text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-extrabold uppercase tracking-wider text-ink-muted mb-1.5">
               Название подарка *
             </label>
             <input
               type="text"
               required
-              placeholder="Например, Беспроводные наушники"
+              placeholder="Например, Наушники Sony WH-1000XM5"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-sm text-ink-light dark:text-ink-dark placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-accent-rose font-medium"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-surface-soft dark:bg-zinc-800/80 border border-border-soft dark:border-zinc-700 text-xs font-semibold text-ink-light dark:text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c4457b] transition-all"
             />
           </div>
 
-          {/* Price input with live currency toggle */}
+          {/* Price Field (Single currency, optional, locked if auto-parsed) */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider">
-                Цена подарка *
+              <label className="text-[11px] font-extrabold uppercase tracking-wider text-ink-muted">
+                Цена ({currSymbol}) <span className="font-normal text-zinc-500 lowercase">(необязательно)</span>
               </label>
-              <div className="flex rounded-lg bg-surface-soft dark:bg-surface-soft-dark p-0.5 border border-border-soft dark:border-border-soft-dark text-[10px] font-extrabold">
+
+              {isPriceLocked && (
                 <button
                   type="button"
-                  onClick={() => {
-                    onHaptic()
-                    if (inputCurrency === 'byn' && price) {
-                      const converted = bynToRub(parseFloat(price) || 0)
-                      setPrice(converted ? String(converted) : '')
-                    }
-                    setInputCurrency('rub')
-                  }}
-                  className={`px-2 py-0.5 rounded transition-all ${
-                    inputCurrency === 'rub'
-                      ? 'bg-accent-rose text-white shadow-sm'
-                      : 'text-ink-muted hover:text-ink-light'
-                  }`}
+                  onClick={() => setIsPriceLocked(false)}
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-[#c4457b] hover:underline"
                 >
-                  ₽ RUB
+                  <Unlock size={11} /> Изменить цену
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onHaptic()
-                    if (inputCurrency === 'rub' && price) {
-                      const converted = rubToByn(parseFloat(price) || 0)
-                      setPrice(converted ? String(converted) : '')
-                    }
-                    setInputCurrency('byn')
-                  }}
-                  className={`px-2 py-0.5 rounded transition-all ${
-                    inputCurrency === 'byn'
-                      ? 'bg-accent-rose text-white shadow-sm'
-                      : 'text-ink-muted hover:text-ink-light'
-                  }`}
-                >
-                  Br BYN
-                </button>
-              </div>
+              )}
             </div>
-            <input
-              type="number"
-              min="0"
-              step="any"
-              required
-              placeholder={inputCurrency === 'rub' ? '4 990 ₽' : '170 Br'}
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-sm text-ink-light dark:text-ink-dark placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-accent-rose font-medium"
-            />
-            {/* Converted currency hint */}
-            {parseFloat(price) > 0 && (
-              <p className="mt-1 text-[11px] font-bold text-accent-rose">
-                ≈{' '}
-                {inputCurrency === 'rub'
-                  ? `${formatByn(parseFloat(price), true)} (бел. руб.)`
-                  : `${formatRub(bynToRub(parseFloat(price)))}`}
+
+            <div className="relative">
+              <input
+                type="number"
+                step="any"
+                min="0"
+                max={maxLimit}
+                disabled={isPriceLocked}
+                placeholder="Без цены (или введите сумму)"
+                value={price}
+                onChange={(e) => {
+                  setPrice(e.target.value)
+                  setFormError(null)
+                }}
+                className={`w-full px-3.5 py-2.5 pr-10 rounded-xl text-xs font-bold text-ink-light dark:text-white placeholder:text-zinc-500 focus:outline-none transition-all ${
+                  isPriceLocked
+                    ? 'bg-zinc-200/50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-zinc-400 cursor-not-allowed'
+                    : 'bg-surface-soft dark:bg-zinc-800/80 border border-border-soft dark:border-zinc-700 focus:border-[#c4457b]'
+                }`}
+              />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-ink-muted">
+                {isPriceLocked ? <Lock size={13} className="text-[#c4457b]" /> : currSymbol}
+              </span>
+            </div>
+
+            {isPriceLocked && (
+              <p className="mt-1 text-[10px] text-zinc-400 flex items-center gap-1">
+                <Lock size={10} className="text-[#c4457b]" /> Цена подтянута с маркетплейса и заблокирована от случайных изменений
               </p>
             )}
           </div>
 
-          {/* Image URL preview */}
+          {/* Description / Notes field */}
           <div>
-            <label className="block text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider mb-1.5">
-              Ссылка на фото
+            <label className="block text-[11px] font-extrabold uppercase tracking-wider text-ink-muted mb-1.5">
+              Заметки и пожелания <span className="font-normal text-zinc-500 lowercase">(размер, цвет и т.д.)</span>
             </label>
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-muted">
-                  <Image size={15} />
-                </span>
-                <input
-                  type="text"
-                  inputMode="url"
-                  placeholder="https://... (прямая ссылка на картинку)"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-2xl bg-surface-card dark:bg-surface-card-dark border border-border-soft dark:border-border-soft-dark text-xs text-ink-light dark:text-ink-dark placeholder-ink-muted focus:outline-none focus:ring-2 focus:ring-accent-rose"
-                />
-              </div>
+            <textarea
+              rows={2}
+              placeholder="Например: цвет только бежевый, размер M или ссылка на видеообзор"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3.5 py-2 rounded-xl bg-surface-soft dark:bg-zinc-800/80 border border-border-soft dark:border-zinc-700 text-xs text-ink-light dark:text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c4457b] transition-all resize-none"
+            />
+          </div>
+
+          {/* Image URL with preview */}
+          <div>
+            <label className="block text-[11px] font-extrabold uppercase tracking-wider text-ink-muted mb-1.5">
+              Прямая ссылка на фото
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="https://... (ссылка на картинку)"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                className="flex-1 px-3.5 py-2.5 rounded-xl bg-surface-soft dark:bg-zinc-800/80 border border-border-soft dark:border-zinc-700 text-xs text-ink-light dark:text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#c4457b] transition-all"
+              />
               {imageUrl && (
-                <div className="w-10 h-10 rounded-xl overflow-hidden bg-surface-soft border border-border-soft shrink-0">
-                  <img
-                    src={imageUrl}
-                    alt="preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none'
-                    }}
-                  />
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700 shrink-0">
+                  <img src={imageUrl} alt="Превью" className="w-full h-full object-cover" />
                 </div>
               )}
             </div>
@@ -330,87 +322,51 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
 
           {/* Priority selector */}
           <div>
-            <label className="block text-xs font-bold text-ink-muted dark:text-ink-muted-dark uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-extrabold uppercase tracking-wider text-ink-muted mb-1.5">
               Приоритет
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { val: 1 as Priority, label: 'Хочу 👍' },
-                { val: 2 as Priority, label: 'Очень хочу 🔥' },
-                { val: 3 as Priority, label: 'Мечта ✨' },
-              ].map((p) => {
-                const isSelected = priority === p.val
-                return (
-                  <button
-                    key={p.val}
-                    type="button"
-                    onClick={() => setPriority(p.val)}
-                    className={`py-2 px-1 rounded-2xl text-xs font-bold transition-all active-press border ${
-                      isSelected
-                        ? 'bg-accent-rose text-white border-accent-rose shadow-sm'
-                        : 'bg-surface-card dark:bg-surface-card-dark text-ink-muted border-border-soft dark:border-border-soft-dark'
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Crowdfunding toggle with high contrast switch */}
-          <div className="pt-2">
-            <div className="p-3.5 rounded-2xl bg-surface-soft dark:bg-surface-soft-dark border border-border-soft dark:border-border-soft-dark flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-ink-light dark:text-ink-dark flex items-center gap-1.5">
-                  <span>Разрешить скинуться</span>
-                  <span>🤝</span>
-                </p>
-                <p className="text-[11px] text-ink-muted dark:text-ink-muted-dark mt-0.5">
-                  Для дорогих подарков — цель сбора автоматически равна стоимости
-                </p>
-              </div>
-
-              {/* High Contrast Visible Switch */}
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isCrowdfund}
-                onClick={() => {
-                  onHaptic()
-                  setIsCrowdfund(!isCrowdfund)
-                }}
-                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none ${
-                  isCrowdfund
-                    ? 'bg-accent-rose shadow-md shadow-accent-rose/30'
-                    : 'bg-zinc-300 dark:bg-zinc-700'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                    isCrowdfund ? 'translate-x-5' : 'translate-x-0'
+                { val: 1, label: 'Хочу 👍', active: 'bg-emerald-950/40 border-emerald-500 text-emerald-300' },
+                { val: 2, label: 'Очень хочу 🔥', active: 'bg-amber-950/40 border-amber-500 text-amber-300' },
+                { val: 3, label: 'Мечта ✨', active: 'bg-[#241920] border-[#c4457b] text-[#d98aab]' },
+              ].map((p) => (
+                <button
+                  key={p.val}
+                  type="button"
+                  onClick={() => {
+                    onHaptic()
+                    setPriority(p.val as Priority)
+                  }}
+                  className={`py-2 px-1 rounded-xl text-xs font-bold border transition-all text-center ${
+                    priority === p.val
+                      ? `${p.active} shadow-sm font-black`
+                      : 'border-border-soft dark:border-zinc-800 text-ink-muted hover:text-ink-light dark:hover:text-white'
                   }`}
-                />
-              </button>
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
-
-            {isCrowdfund && (
-              <div className="mt-2.5 px-3 py-2 rounded-xl bg-accent-rose/10 border border-accent-rose/20 text-xs font-bold text-accent-rose dark:text-accent-rose-dark flex items-center justify-between animate-fade-in">
-                <span>🎯 Цель сбора:</span>
-                <span>{price ? `${parseInt(price, 10).toLocaleString('ru-RU')} ₽` : 'Укажите цену подарка выше'}</span>
-              </div>
-            )}
           </div>
+
+          {/* Form error notification */}
+          {formError && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-bold flex items-center gap-2">
+              <AlertCircle size={15} className="shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
 
           {/* Submit button */}
-          <div className="pt-3">
+          <div className="pt-2">
             <button
               type="submit"
               disabled={isSubmitting || !title.trim()}
-              className="w-full h-12 py-3 rounded-full bg-accent-rose text-white text-sm font-extrabold active-press shadow-lg shadow-accent-rose/25 hover:bg-accent-rose-hover transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-full bg-[#c4457b] hover:bg-[#b03b6d] text-white text-xs font-black active-press shadow-lg shadow-[#c4457b]/25 disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
             >
               {isSubmitting ? (
-                <Loader2 size={18} className="animate-spin" />
+                <Loader2 size={16} className="animate-spin" />
               ) : (
                 <span>{initialGift ? 'Сохранить изменения' : 'Добавить в вишлист ✨'}</span>
               )}

@@ -122,7 +122,7 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
         },
         stats: {
           totalGifts: giftsList.length,
-          bookedGifts: bookedCount,
+          bookedGifts: isOwner ? 0 : bookedCount,
         },
         gifts: returnedGifts,
       }
@@ -139,6 +139,7 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
         currency: 'RUB',
         url: input.url || null,
         imageUrl: input.imageUrl || null,
+        description: input.description || null,
         categoryId: input.categoryId || 'other',
         priority: input.priority || 1,
         isCrowdfund: Boolean(input.isCrowdfund),
@@ -162,6 +163,7 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
         ...giftsList[index],
         title: input.title !== undefined ? input.title : giftsList[index].title,
         price: input.price !== undefined ? parseInt(input.price, 10) : giftsList[index].price,
+        description: input.description !== undefined ? input.description : giftsList[index].description,
         url: input.url !== undefined ? input.url : giftsList[index].url,
         imageUrl: input.imageUrl !== undefined ? input.imageUrl : giftsList[index].imageUrl,
         categoryId: input.categoryId !== undefined ? input.categoryId : giftsList[index].categoryId,

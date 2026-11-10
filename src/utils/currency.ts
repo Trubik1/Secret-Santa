@@ -1,12 +1,23 @@
-export type CurrencyMode = 'both' | 'rub' | 'byn' | 'usd' | 'eur' | 'kzt'
+export type CurrencyMode = 'byn' | 'rub' | 'usd' | 'eur' | 'kzt'
 
-export const RATES_TO_RUB = {
+export const RATES_TO_RUB: Record<CurrencyMode, number> = {
   rub: 1,
   byn: 29.5, // 1 BYN ≈ 29.5 RUB
   usd: 92.0, // 1 USD ≈ 92 RUB
   eur: 100.0, // 1 EUR ≈ 100 RUB
   kzt: 0.19, // 1 KZT ≈ 0.19 RUB (1 RUB ≈ 5.26 KZT)
 }
+
+export const MAX_LIMITS: Record<CurrencyMode, number> = {
+  usd: 5000,
+  eur: 4800,
+  byn: 16000,
+  rub: 500000,
+  kzt: 2500000,
+}
+
+// Порог, выше которого на подарке автоматически доступна кнопка «Скинуться с друзьями»
+export const CROWDFUND_THRESHOLDS_IN_RUB = 3000 // 3 000 ₽ ≈ 100 Br ≈ $30
 
 export interface CurrencyOption {
   id: CurrencyMode
@@ -18,11 +29,11 @@ export interface CurrencyOption {
 
 export const ALL_CURRENCIES: CurrencyOption[] = [
   {
-    id: 'both',
-    name: 'Две валюты (₽ + Br)',
-    symbol: '₽/Br',
-    flag: '🇷🇺🇧🇾',
-    description: 'Показывать цены в российских и белорусских рублях',
+    id: 'byn',
+    name: 'Белорусский рубль',
+    symbol: 'Br',
+    flag: '🇧🇾',
+    description: 'Официальная валюта РБ (BYN)',
   },
   {
     id: 'rub',
@@ -30,13 +41,6 @@ export const ALL_CURRENCIES: CurrencyOption[] = [
     symbol: '₽',
     flag: '🇷🇺',
     description: 'Официальная валюта РФ (RUB)',
-  },
-  {
-    id: 'byn',
-    name: 'Белорусский рубль',
-    symbol: 'Br',
-    flag: '🇧🇾',
-    description: 'Официальная валюта РБ (BYN)',
   },
   {
     id: 'usd',
@@ -61,34 +65,95 @@ export const ALL_CURRENCIES: CurrencyOption[] = [
   },
 ]
 
-/**
- * Converts Russian Rubles (RUB) to Belarusian Rubles (BYN)
- */
-export function rubToByn(rub: number): number {
-  if (!rub || rub <= 0) return 0
-  const val = rub / RATES_TO_RUB.byn
-  return val < 10 ? Number(val.toFixed(2)) : Number(val.toFixed(1))
+export function getCurrencySymbol(mode: CurrencyMode = 'byn'): string {
+  switch (mode) {
+    case 'byn': return 'Br'
+    case 'rub': return '₽'
+    case 'usd': return '$'
+    case 'eur': return '€'
+    case 'kzt': return '₸'
+    default: return 'Br'
+  }
 }
 
 /**
- * Converts Belarusian Rubles (BYN) to Russian Rubles (RUB)
- */
-export function bynToRub(byn: number): number {
-  if (!byn || byn <= 0) return 0
-  return Math.round(byn * RATES_TO_RUB.byn)
-}
-
-/**
- * Converts RUB to target currency
+ * Converts Russian Rubles (RUB) to Target Currency
  */
 export function convertRubTo(rub: number, target: CurrencyMode): number {
   if (!rub || rub <= 0) return 0
-  if (target === 'rub' || target === 'both') return rub
+  if (target === 'rub') return rub
   const rate = RATES_TO_RUB[target] || 1
   const converted = rub / rate
   if (target === 'kzt') return Math.round(converted)
   if (converted < 10) return Number(converted.toFixed(2))
   return Number(converted.toFixed(1))
+}
+
+/**
+ * Converts Target Currency amount back to Russian Rubles (RUB)
+ */
+export function convertToRub(amount: number, source: CurrencyMode): number {
+  if (!amount || amount <= 0) return 0
+  if (source === 'rub') return Math.round(amount)
+  const rate = RATES_TO_RUB[source] || 1
+  return Math.round(amount * rate)
+}
+
+/**
+ * Formats price in Target Currency (strictly single currency, no secondary brackets)
+ */
+export function formatPrice(amountInRub: number, mode: CurrencyMode = 'byn'): string {
+  if (!amountInRub || amountInRub <= 0) {
+    return 'Без цены'
+  }
+
+  if (mode === 'rub') {
+    return `${amountInRub.toLocaleString('ru-RU')} ₽`
+  }
+
+  if (mode === 'byn') {
+    const val = amountInRub / RATES_TO_RUB.byn
+    const formatted = val.toLocaleString('ru-RU', {
+      minimumFractionDigits: val % 1 === 0 ? 0 : 1,
+      maximumFractionDigits: 2,
+    })
+    return `${formatted} Br`
+  }
+
+  if (mode === 'usd') {
+    const val = (amountInRub / RATES_TO_RUB.usd).toFixed(1)
+    return `$${Number(val).toLocaleString('en-US')}`
+  }
+
+  if (mode === 'eur') {
+    const val = (amountInRub / RATES_TO_RUB.eur).toFixed(1)
+    return `€${Number(val).toLocaleString('de-DE')}`
+  }
+
+  if (mode === 'kzt') {
+    const val = Math.round(amountInRub / RATES_TO_RUB.kzt)
+    return `${val.toLocaleString('ru-RU')} ₸`
+  }
+
+  return `${amountInRub.toLocaleString('ru-RU')} ₽`
+}
+
+/**
+ * Compatibility wrapper for components expecting { primary, fullText }
+ */
+export function formatDualPrice(
+  rub: number,
+  mode: CurrencyMode = 'byn'
+): {
+  primary: string
+  secondary?: string
+  fullText: string
+} {
+  const text = formatPrice(rub, mode)
+  return {
+    primary: text,
+    fullText: text,
+  }
 }
 
 /**
@@ -103,7 +168,7 @@ export function formatRub(rub: number): string {
  * Formats amount in Belarusian Rubles
  */
 export function formatByn(amount: number, isRubInput = true): string {
-  const byn = isRubInput ? rubToByn(amount) : amount
+  const byn = isRubInput ? amount / RATES_TO_RUB.byn : amount
   if (!byn || byn <= 0) return '0 Br'
   return `${byn.toLocaleString('ru-RU', {
     minimumFractionDigits: byn % 1 === 0 ? 0 : 1,
@@ -111,80 +176,13 @@ export function formatByn(amount: number, isRubInput = true): string {
   })} Br`
 }
 
-/**
- * Formats dual or single price based on active currency preference
- */
-export function formatDualPrice(
-  rub: number,
-  mode: CurrencyMode = 'both'
-): {
-  primary: string
-  secondary?: string
-  fullText: string
-} {
-  if (!rub || rub <= 0) {
-    return { primary: 'Без цены', fullText: 'Без цены' }
-  }
+export function rubToByn(rub: number): number {
+  if (!rub || rub <= 0) return 0
+  const val = rub / RATES_TO_RUB.byn
+  return val < 10 ? Number(val.toFixed(2)) : Number(val.toFixed(1))
+}
 
-  const rubText = formatRub(rub)
-  const bynText = `~${formatByn(rub, true)}`
-
-  if (mode === 'both') {
-    return {
-      primary: rubText,
-      secondary: bynText,
-      fullText: `${rubText} · ${bynText}`,
-    }
-  }
-
-  if (mode === 'rub') {
-    return {
-      primary: rubText,
-      fullText: rubText,
-    }
-  }
-
-  if (mode === 'byn') {
-    const rawByn = formatByn(rub, true)
-    return {
-      primary: rawByn,
-      secondary: `~${rubText}`,
-      fullText: `${rawByn} (~${rubText})`,
-    }
-  }
-
-  if (mode === 'usd') {
-    const val = (rub / RATES_TO_RUB.usd).toFixed(1)
-    const text = `$${Number(val).toLocaleString('en-US')}`
-    return {
-      primary: text,
-      secondary: `~${rubText}`,
-      fullText: `${text} (~${rubText})`,
-    }
-  }
-
-  if (mode === 'eur') {
-    const val = (rub / RATES_TO_RUB.eur).toFixed(1)
-    const text = `€${Number(val).toLocaleString('de-DE')}`
-    return {
-      primary: text,
-      secondary: `~${rubText}`,
-      fullText: `${text} (~${rubText})`,
-    }
-  }
-
-  if (mode === 'kzt') {
-    const val = Math.round(rub / RATES_TO_RUB.kzt)
-    const text = `${val.toLocaleString('ru-RU')} ₸`
-    return {
-      primary: text,
-      secondary: `~${rubText}`,
-      fullText: `${text} (~${rubText})`,
-    }
-  }
-
-  return {
-    primary: rubText,
-    fullText: rubText,
-  }
+export function bynToRub(byn: number): number {
+  if (!byn || byn <= 0) return 0
+  return Math.round(byn * RATES_TO_RUB.byn)
 }

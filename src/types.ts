@@ -33,6 +33,7 @@ export interface Gift {
   title: string
   price: number
   currency: string
+  description?: string | null
   url?: string | null
   imageUrl?: string | null
   categoryId: string
