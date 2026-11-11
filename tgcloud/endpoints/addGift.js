@@ -1,10 +1,21 @@
 import { db, EndpointError } from 'sdk'
-import { gifts } from '../schema.js'
+import { eq } from 'sdk/db'
+import { gifts, users } from '../schema.js'
 
 export default async function (input, ctx) {
   const caller = ctx.initData?.user
   if (!caller?.id) {
     throw new EndpointError('Unauthorized: missing user in initData', { code: 'UNAUTHORIZED' })
+  }
+
+  // Check free limit of 5 gifts
+  const user = await db.select().from(users).where(eq(users.id, caller.id)).get()
+  const isPremium = Boolean(user?.isPremium)
+  if (!isPremium) {
+    const existingGifts = await db.select().from(gifts).where(eq(gifts.userId, caller.id)).all()
+    if (existingGifts.length >= 5) {
+      throw new EndpointError('Достигнут бесплатный лимит в 5 желаний. Подключите Giftly Premium ⭐ для безлимита!', { code: 'PREMIUM_REQUIRED' })
+    }
   }
 
   const title = input?.title?.trim()
