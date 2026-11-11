@@ -62,3 +62,4 @@
 - **[2026-11-11]** feat(stars): add pre_checkout_query webhook handler for invoice confirmation
 - **[2026-11-11]** feat(schema): add is_premium boolean flag to users table
 - **[2026-11-11]** feat(schema): add cover_url text column to users table
+- **[2026-11-11]** feat(cover): build CoverCropModal with client-side canvas crop
