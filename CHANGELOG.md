@@ -61,3 +61,4 @@
 - **[2026-11-11]** feat(stars): implement createStarInvoice serverless endpoint for 50 Stars
 - **[2026-11-11]** feat(stars): add pre_checkout_query webhook handler for invoice confirmation
 - **[2026-11-11]** feat(schema): add is_premium boolean flag to users table
+- **[2026-11-11]** feat(schema): add cover_url text column to users table
