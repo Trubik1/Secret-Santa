@@ -63,3 +63,4 @@
 - **[2026-11-11]** feat(schema): add is_premium boolean flag to users table
 - **[2026-11-11]** feat(schema): add cover_url text column to users table
 - **[2026-11-11]** feat(cover): build CoverCropModal with client-side canvas crop
+- **[2026-11-11]** perf(cover): optimize cover image export to WebP under 45KB
