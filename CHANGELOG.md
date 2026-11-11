@@ -67,3 +67,4 @@
 - **[2026-11-11]** feat(premium): build PremiumModal detailing features and 50 Stars unlock
 - **[2026-11-11]** feat(limits): enforce 5-gift limit for free tier in addGift endpoint
 - **[2026-11-11]** feat(premium): restrict custom cover uploads to Giftly Premium users
+- **[2026-11-11]** style(nav): replace raster stickers with crisp vector SVGs in bottom dock
