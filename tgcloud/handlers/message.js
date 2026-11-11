@@ -38,6 +38,68 @@ export default async function (message, ctx) {
     console.error('Failed to sync user on message:', err)
   }
 
+  // Handle successful Telegram Stars payment
+  if (message.successful_payment) {
+    const sp = message.successful_payment
+    let payload = {}
+    try {
+      payload = JSON.parse(sp.invoice_payload)
+    } catch (_) {}
+
+    const stars = sp.total_amount
+
+    // Grant Giftly Premium
+    if (payload.type === 'premium' || payload.type === 'premium_upgrade') {
+      try {
+        await db.update(users).set({ isPremium: true }).where(eq(users.id, fromUser.id)).run()
+      } catch (err) {
+        console.error('Failed to grant premium:', err)
+      }
+
+      await api.sendMessage({
+        chat_id: chatId,
+        text: `⭐️ <b>Поздравляем с активацией Giftly Premium!</b>\n\n` +
+              `Тебе теперь доступны:\n` +
+              `• <b>Безлимитное добавление желаний</b>\n` +
+              `• <b>Кастомная обложка профиля</b> (загрузка своего фото)\n` +
+              `• Премиум-бейдж ⭐️\n\n` +
+              `Открой свой вишлист и настрой персональный стиль!`,
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: '🎁 Открыть вишлист',
+                icon_custom_emoji_id: '6032937473162614352',
+                web_app: { url: appBaseUrl }
+              }
+            ]
+          ]
+        }
+      })
+      return
+    }
+
+    await api.sendMessage({
+      chat_id: chatId,
+      text: `⭐️ <b>Оплата Telegram Stars успешно получена!</b>\n\n` +
+            `Спасибо за взнос <b>${stars} ⭐</b>!`,
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: 'Открыть вишлист',
+              icon_custom_emoji_id: '6032937473162614352',
+              web_app: { url: appBaseUrl }
+            }
+          ]
+        ]
+      }
+    })
+    return
+  }
+
   // Handle /start commands
   if (text.startsWith('/start')) {
     const parts = text.split(' ')
@@ -57,14 +119,15 @@ export default async function (message, ctx) {
 
         await api.sendMessage({
           chat_id: chatId,
-          text: `Вишлист <b>${ownerName}</b> 🎁\n\n` +
+          text: `<tg-emoji emoji-id="6032937473162614352">🎁</tg-emoji> Вишлист <b>${ownerName}</b>\n\n` +
                 `Выбирай, что подарить, бронируй подарок в один клик или скидывайся вместе с компанией друзей.`,
           parse_mode: 'HTML',
           reply_markup: {
             inline_keyboard: [
               [
                 {
-                  text: `✨ Открыть список ${ownerName}`,
+                  text: `Открыть список ${ownerName}`,
+                  icon_custom_emoji_id: '5958376256788502078',
                   web_app: {
                     url: `${appBaseUrl}?start_param=wish_${targetUserId}`,
                   },
@@ -100,15 +163,16 @@ export default async function (message, ctx) {
 
     await api.sendMessage({
       chat_id: chatId,
-      text: `Привет, <b>${displayName}</b>!\n\n` +
+      text: `Привет, <b>${displayName}</b>! <tg-emoji emoji-id="5958376256788502078">✨</tg-emoji>\n\n` +
             `Здесь твой персональный вишлист. Добавляй товары прямо по ссылкам с Wildberries или Ozon, а друзья смогут их бронировать или скидываться.\n\n` +
-            `🔗 Твоя ссылка для друзей:\n<code>${shareLink}</code>`,
+            `<tg-emoji emoji-id="5440410042773824003">🔗</tg-emoji> <b>Твоя ссылка для друзей:</b>\n<code>${shareLink}</code>`,
       parse_mode: 'HTML',
       reply_markup: {
         inline_keyboard: [
           [
             {
-              text: '🎁 Открыть вишлист',
+              text: 'Открыть вишлист',
+              icon_custom_emoji_id: '6032937473162614352',
               web_app: {
                 url: appBaseUrl,
               },
@@ -116,7 +180,8 @@ export default async function (message, ctx) {
           ],
           [
             {
-              text: '📤 Отправить друзьям',
+              text: 'Отправить друзьям',
+              icon_custom_emoji_id: '5440410042773824003',
               url: `https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(`Мой вишлист 🎁 ➔ ${shareLink}`)}`,
             }
           ]
@@ -130,13 +195,14 @@ export default async function (message, ctx) {
   const shareLink = `https://t.me/${botUsername}?start=wish_${fromUser.id}`
   await api.sendMessage({
     chat_id: chatId,
-    text: `Нажми кнопку ниже, чтобы открыть свой вишлист, добавить подарки или посмотреть списки друзей 👇`,
+    text: `<tg-emoji emoji-id="6032937473162614352">🎁</tg-emoji> Нажми кнопку ниже, чтобы открыть свой вишлист, добавить подарки или посмотреть списки друзей:`,
     parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [
         [
           {
-            text: '🎁 Открыть вишлист',
+            text: 'Открыть вишлист',
+            icon_custom_emoji_id: '6032937473162614352',
             web_app: {
               url: appBaseUrl,
             },
