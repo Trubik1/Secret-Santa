@@ -58,3 +58,4 @@
 - **[2026-11-10]** feat(bot): sanitize and escape HTML tags in bot message templates
 - **[2026-11-10]** refactor(styles): clean up tailwind color tokens and typography scale
 - **[2026-11-11]** feat(stars): setup Telegram Stars payment infrastructure
+- **[2026-11-11]** feat(stars): implement createStarInvoice serverless endpoint for 50 Stars
