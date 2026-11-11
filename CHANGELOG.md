@@ -66,3 +66,4 @@
 - **[2026-11-11]** perf(cover): optimize cover image export to WebP under 45KB
 - **[2026-11-11]** feat(premium): build PremiumModal detailing features and 50 Stars unlock
 - **[2026-11-11]** feat(limits): enforce 5-gift limit for free tier in addGift endpoint
+- **[2026-11-11]** feat(premium): restrict custom cover uploads to Giftly Premium users

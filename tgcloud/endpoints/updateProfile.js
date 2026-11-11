@@ -10,6 +10,8 @@ export default async function (input, ctx) {
 
   const eventTitle = input?.eventTitle !== undefined ? (input.eventTitle ? input.eventTitle.trim() : '') : null
   const eventDate = input?.eventDate !== undefined ? (input.eventDate ? input.eventDate.trim() : null) : null
+  const coverUrl = input?.coverUrl !== undefined ? input.coverUrl : null
+  const isPremium = input?.isPremium !== undefined ? Boolean(input.isPremium) : null
 
   const existing = await db.select().from(users).where(eq(users.id, caller.id)).get()
   if (!existing) {
@@ -20,17 +22,24 @@ export default async function (input, ctx) {
       username: caller.username || null,
       eventTitle: eventTitle !== null ? eventTitle : '',
       eventDate: eventDate || null,
+      coverUrl: coverUrl || null,
+      isPremium: isPremium !== null ? isPremium : false,
     }).run()
   } else {
-    await db.update(users).set({
-      eventTitle: eventTitle !== null ? eventTitle : '',
-      eventDate: input?.eventDate !== undefined ? eventDate : existing.eventDate,
-    }).where(eq(users.id, caller.id)).run()
+    const updateData = {}
+    if (eventTitle !== null) updateData.eventTitle = eventTitle
+    if (input?.eventDate !== undefined) updateData.eventDate = eventDate
+    if (input?.coverUrl !== undefined) updateData.coverUrl = coverUrl
+    if (isPremium !== null) updateData.isPremium = isPremium
+
+    await db.update(users).set(updateData).where(eq(users.id, caller.id)).run()
   }
 
   return {
     success: true,
     eventTitle,
     eventDate,
+    coverUrl,
+    isPremium,
   }
 }
