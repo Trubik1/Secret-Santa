@@ -71,3 +71,4 @@
 - **[2026-11-11]** fix(currency): remove secondary currency parenthesis in price labels
 - **[2026-11-11]** feat(bot): enhance /start greeting message with custom emoji icons
 - **[2026-11-11]** test: add automated test script for Stars invoice generation
+- **[2026-11-11]** feat(deploy): execute tgcloud database migration for premium columns
