@@ -75,3 +75,4 @@
 - **[2026-11-12]** feat(router): support start_param deep links across all Telegram clients
 - **[2026-11-12]** fix(auth): fix guest ownership resolution when opening friend links
 - **[2026-11-12]** feat(auth): derive isEffectiveOwner boolean to strictly protect guest view
+- **[2026-11-12]** feat(ui): add prominent guest mode context banner with back navigation
