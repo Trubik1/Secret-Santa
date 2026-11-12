@@ -79,3 +79,4 @@
 - **[2026-11-12]** feat(friends): auto-save visited friend wishlists to local storage
 - **[2026-11-12]** feat(security): block gift editing and deletion actions in guest mode
 - **[2026-11-12]** feat(ui): hide camera and add gift buttons when viewing friend page
+- **[2026-11-12]** test(security): create automated security audit suite against SQL injection
