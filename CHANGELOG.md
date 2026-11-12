@@ -90,3 +90,4 @@
 - **[2026-11-12]** feat(modal): adapt PledgeModal for initiating group collections
 - **[2026-11-12]** feat(crowdfund): automatically book gift when 100% collection goal is met
 - **[2026-11-12]** feat(catalog): sort guest feed prioritizing active group collections
+- **[2026-11-12]** chore(build): compile production assets with TypeScript and Vite
