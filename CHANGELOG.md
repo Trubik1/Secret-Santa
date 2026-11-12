@@ -74,3 +74,4 @@
 - **[2026-11-11]** feat(deploy): execute tgcloud database migration for premium columns
 - **[2026-11-12]** feat(router): support start_param deep links across all Telegram clients
 - **[2026-11-12]** fix(auth): fix guest ownership resolution when opening friend links
+- **[2026-11-12]** feat(auth): derive isEffectiveOwner boolean to strictly protect guest view
