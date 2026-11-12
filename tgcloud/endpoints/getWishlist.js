@@ -9,7 +9,7 @@ export default async function (input, ctx) {
   }
 
   const requestedOwnerId = input?.ownerId ? parseInt(input.ownerId, 10) : caller.id
-  const isOwner = (caller.id === requestedOwnerId)
+  const isOwner = Boolean(String(caller.id) === String(requestedOwnerId))
 
   // 1. Get or create target user profile
   let profile = await db.select().from(users).where(eq(users.id, requestedOwnerId)).get()
@@ -155,14 +155,16 @@ export default async function (input, ctx) {
   return {
     profile: {
       id: profile.id,
-      firstName: profile.firstName,
-      lastName: profile.lastName,
-      username: profile.username,
-      photoUrl: profile.photoUrl,
+      firstName: profile.firstName || 'Друг',
+      lastName: profile.lastName || '',
+      username: profile.username || null,
+      photoUrl: profile.photoUrl || null,
       eventTitle: cleanEventTitle,
       eventDate: profile.eventDate,
+      isPremium: Boolean(profile.isPremium),
+      coverUrl: profile.coverUrl || null,
     },
-    isOwner,
+    isOwner: Boolean(isOwner),
     viewer: {
       id: caller.id,
       firstName: caller.first_name,

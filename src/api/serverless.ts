@@ -89,12 +89,30 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
   // 2. Hybrid Browser Mock Layer (Simulates server latency & SQLite logic)
   await new Promise((r) => setTimeout(r, 200)) // 200ms realistic UI feel
 
-  const isOwner = getMockIsOwner()
   const profile = getMockProfile()
   let giftsList = getMockGifts()
 
+  // Support ownerId in mock layer
+  const requestedOwnerId = input?.ownerId ? parseInt(input.ownerId, 10) : profile.id
+  const isViewingOther = Boolean(input?.ownerId && String(requestedOwnerId) !== String(profile.id))
+  const isOwner = isViewingOther ? false : getMockIsOwner()
+
   switch (endpoint) {
     case 'getWishlist': {
+      const targetProfile: UserProfile = isViewingOther
+        ? {
+            id: requestedOwnerId,
+            firstName: 'Друг #' + String(requestedOwnerId).slice(-4),
+            lastName: '',
+            username: 'friend_' + String(requestedOwnerId).slice(-4),
+            photoUrl: null,
+            eventTitle: 'Вишлист друга 🎁',
+            eventDate: null,
+            isPremium: false,
+            coverUrl: null,
+          }
+        : profile
+
       const bookedCount = giftsList.filter((g) => g.isBooked).length
 
       // Apply Surprise Mode if viewed by owner
@@ -109,16 +127,20 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
             pledges: [],
           }
         }
-        return g
+        return {
+          ...g,
+          // If viewing friend, ensure isBooked / isBookedByMe flags exist
+          isBookedByMe: g.isBooked && (g as any).isBookedByMe === true,
+        }
       })
 
       const response: WishlistData = {
-        profile,
+        profile: targetProfile,
         isOwner,
         viewer: {
-          id: isOwner ? profile.id : 99999,
-          firstName: isOwner ? profile.firstName : 'Друг',
-          username: isOwner ? profile.username : 'friend_guest',
+          id: profile.id,
+          firstName: profile.firstName,
+          username: profile.username,
         },
         stats: {
           totalGifts: giftsList.length,
@@ -130,6 +152,12 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
     }
 
     case 'addGift': {
+      if (!isOwner) {
+        throw new Error('Вы не можете добавлять подарки в чужой вишлист')
+      }
+      if (!profile.isPremium && giftsList.length >= 5) {
+        throw new Error('Достигнут бесплатный лимит в 5 желаний. Подключите Giftly Premium ⭐ для безлимита!')
+      }
       const id = 'gift-' + Date.now()
       const newGift: Gift = {
         id,
@@ -156,6 +184,9 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
     }
 
     case 'updateGift': {
+      if (!isOwner) {
+        throw new Error('Вы не можете редактировать подарки в чужом вишлисте')
+      }
       const index = giftsList.findIndex((g) => g.id === input.id)
       if (index === -1) throw new Error('Подарок не найден')
 
@@ -176,6 +207,9 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
     }
 
     case 'deleteGift': {
+      if (!isOwner) {
+        throw new Error('Вы не можете удалять подарки из чужого вишлиста')
+      }
       giftsList = giftsList.filter((g) => g.id !== input.id)
       saveMockGifts(giftsList)
       return { success: true } as unknown as T
@@ -210,6 +244,9 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
       const amount = parseInt(input.amount, 10) || 0
       if (amount <= 0) throw new Error('Некорректная сумма')
 
+      gift.isCrowdfund = true
+      gift.targetAmount = gift.price || amount
+
       const pledges = gift.pledges || []
       const existing = pledges.find((p) => p.isMe)
 
@@ -232,7 +269,8 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
       gift.totalPledged = pledges.reduce((sum, p) => sum + p.amount, 0)
       gift.myPledgedAmount = amount
 
-      if (gift.targetAmount > 0 && gift.totalPledged >= gift.targetAmount) {
+      const target = gift.targetAmount > 0 ? gift.targetAmount : gift.price
+      if (target > 0 && gift.totalPledged >= target) {
         gift.isBooked = true
       }
 
@@ -245,6 +283,8 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
         ...profile,
         eventTitle: input.eventTitle !== undefined ? input.eventTitle : profile.eventTitle,
         eventDate: input.eventDate !== undefined ? input.eventDate : profile.eventDate,
+        coverUrl: input.coverUrl !== undefined ? input.coverUrl : profile.coverUrl,
+        isPremium: input.isPremium !== undefined ? Boolean(input.isPremium) : profile.isPremium,
       }
       saveMockProfile(updated)
       return { success: true } as unknown as T
@@ -262,17 +302,17 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
 
       if (url.includes('wildberries') || url.includes('wb.ru')) {
         mockResult = {
-          title: 'Товар с Wildberries (автоопределение)',
-          imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80',
-          price: 5490,
+          title: 'Наушники Sony WH-1000XM5',
+          imageUrl: '/products/headphones.jpg',
+          price: 33490,
           url,
           parsed: true,
         }
       } else if (url.includes('ozon')) {
         mockResult = {
-          title: 'Товар с Ozon (автоопределение)',
-          imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
-          price: 12900,
+          title: 'Смарт-часы Minimal Series 2',
+          imageUrl: '/products/watch.jpg',
+          price: 24990,
           url,
           parsed: true,
         }
@@ -281,7 +321,64 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
       return mockResult as unknown as T
     }
 
+    case 'createStarInvoice': {
+      // In dev/mock mode, return a dummy invoice or simulated response
+      return { ok: true, invoiceLink: `https://t.me/$mock_star_${Date.now()}` } as unknown as T
+    }
+
     default:
       throw new Error(`Unknown endpoint: ${endpoint}`)
+  }
+}
+
+/**
+ * Initiates native Telegram Stars payment through Bot API createInvoiceLink + openInvoice
+ */
+export async function payWithTelegramStars(params: {
+  giftId?: string
+  amount: number
+  title?: string
+  description?: string
+  onSuccess?: () => void
+  onCancel?: () => void
+  onError?: (err: any) => void
+}): Promise<void> {
+  const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : null
+
+  try {
+    const res = await serverlessCall<{ ok: boolean; invoiceLink: string }>('createStarInvoice', {
+      giftId: params.giftId,
+      amount: params.amount,
+      title: params.title || 'Сбор на подарок 🎁',
+      description: params.description || `Взнос ${params.amount} ⭐ Telegram Stars в вишлист`,
+    })
+
+    if (!res?.invoiceLink) {
+      throw new Error('Не удалось создать инвойс Telegram Stars')
+    }
+
+    if (tg?.openInvoice) {
+      tg.openInvoice(res.invoiceLink, (status: string) => {
+        if (status === 'paid') {
+          params.onSuccess?.()
+        } else if (status === 'cancelled') {
+          params.onCancel?.()
+        } else if (status === 'failed') {
+          params.onError?.(new Error('Оплата в Telegram Stars не удалась'))
+        }
+      })
+    } else {
+      // Browser fallback (outside Telegram or in dev)
+      const confirmed = window.confirm(
+        `⭐️ Telegram Stars Payment\nСумма: ${params.amount} ⭐\nНазначение: ${params.title || 'Взнос в вишлист'}\n\nПодтвердить оплату звёздами?`
+      )
+      if (confirmed) {
+        params.onSuccess?.()
+      } else {
+        params.onCancel?.()
+      }
+    }
+  } catch (err: any) {
+    params.onError?.(err)
   }
 }

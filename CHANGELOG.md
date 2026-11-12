@@ -88,3 +88,4 @@
 - **[2026-11-12]** feat(ui): display live list of contributors with Telegram usernames and sums
 - **[2026-11-12]** feat(ui): pin active group collections at #1 position in catalog
 - **[2026-11-12]** feat(modal): adapt PledgeModal for initiating group collections
+- **[2026-11-12]** feat(crowdfund): automatically book gift when 100% collection goal is met
