@@ -75,6 +75,39 @@ export async function notifyCrowdfundPledge({ giftTitle, pledgerName, pledgerUse
   }
 }
 
+/**
+ * Notify all crowdfunding participants when the goal (100%) is achieved.
+ */
+export async function notifyCrowdfundCompleted({ giftTitle, giftPrice, giftUrl, ownerName, participants = [] }) {
+  const priceStr = giftPrice > 0 ? `<b>${giftPrice.toLocaleString('ru-RU')} ₽</b>` : ''
+  const linkStr = giftUrl ? `\n🔗 <b>Ссылка на покупку:</b> ${giftUrl}` : ''
+  const targetUserStr = ownerName ? ` для <b>${escapeHtml(ownerName)}</b>` : ''
+
+  const messageText =
+    `🎉 <b>Сбор успешно завершён!</b>\n\n` +
+    `Сумма на подарок <b>«${escapeHtml(giftTitle)}»</b>${targetUserStr} собрана на 100% (${priceStr})!\n\n` +
+    `🚀 <b>Пора заказывать подарок!</b>${linkStr}\n\n` +
+    `<i>Подарок автоматически забронирован за вашей компанией и защищён от повторного дарения.</i>`
+
+  const extra = giftUrl ? {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: '🛍 Купить в магазине', url: giftUrl }
+        ]
+      ]
+    }
+  } : {}
+
+  const contacted = new Set()
+  for (const p of participants) {
+    if (p.userId && !contacted.has(p.userId)) {
+      contacted.add(p.userId)
+      await sendSafeMessage(p.userId, messageText, extra)
+    }
+  }
+}
+
 function escapeHtml(text) {
   if (!text) return ''
   return String(text)
