@@ -72,3 +72,4 @@
 - **[2026-11-11]** feat(bot): enhance /start greeting message with custom emoji icons
 - **[2026-11-11]** test: add automated test script for Stars invoice generation
 - **[2026-11-11]** feat(deploy): execute tgcloud database migration for premium columns
+- **[2026-11-12]** feat(router): support start_param deep links across all Telegram clients
