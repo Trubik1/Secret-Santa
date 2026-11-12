@@ -76,3 +76,4 @@
 - **[2026-11-12]** fix(auth): fix guest ownership resolution when opening friend links
 - **[2026-11-12]** feat(auth): derive isEffectiveOwner boolean to strictly protect guest view
 - **[2026-11-12]** feat(ui): add prominent guest mode context banner with back navigation
+- **[2026-11-12]** feat(friends): auto-save visited friend wishlists to local storage
