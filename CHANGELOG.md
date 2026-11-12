@@ -86,3 +86,4 @@
 - **[2026-11-12]** feat(notifications): add notifyCrowdfundCompleted bot notification on 100% goal
 - **[2026-11-12]** feat(ui): build GroupCollectionCard component with full-width layout
 - **[2026-11-12]** feat(ui): display live list of contributors with Telegram usernames and sums
+- **[2026-11-12]** feat(ui): pin active group collections at #1 position in catalog
