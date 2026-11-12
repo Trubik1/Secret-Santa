@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Gift } from '../types'
-import { CurrencyMode, formatPrice, CROWDFUND_THRESHOLDS_IN_RUB } from '../utils/currency'
+import { CurrencyMode, formatPrice } from '../utils/currency'
 import { ExternalLink, Edit3, Trash2, Gift as GiftIcon, Users, CheckCircle2, Lock } from 'lucide-react'
 
 interface GiftDetailModalProps {
@@ -83,20 +83,19 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
   if (!gift) return null
 
   const priceText = formatPrice(gift.price, currencyMode)
-  const isCrowdfundAvailable = gift.price >= CROWDFUND_THRESHOLDS_IN_RUB
   const pledged = gift.totalPledged || 0
   const progressPercent = gift.price > 0 ? Math.min(100, Math.round((pledged / gift.price) * 100)) : 0
 
   const priorityLabel =
     gift.priority === 3
-      ? { text: 'Мечта ✨', bg: 'bg-[#241920] dark:bg-[#241920] text-[#c4457b] dark:text-[#d98aab] border-[#c4457b]/30' }
+      ? { text: 'МЕЧТА', bg: 'bg-white/10 text-white border-white/20' }
       : gift.priority === 2
-      ? { text: 'Очень хочу 🔥', bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30' }
-      : { text: 'Хочу 👍', bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' }
+      ? { text: 'ОЧЕНЬ ХОЧУ', bg: 'bg-zinc-800 text-zinc-300 border-white/10' }
+      : { text: 'ХОЧУ', bg: 'bg-zinc-800/80 text-zinc-400 border-white/5' }
 
   return (
     <div
-      className={`fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity duration-300 ${
+      className={`fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity duration-300 ${
         isClosing ? 'opacity-0' : 'opacity-100'
       }`}
       onClick={handleDismiss}
@@ -104,7 +103,7 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
       onMouseUp={handleTouchEnd}
     >
       <div
-        className={`w-full max-w-md bg-white dark:bg-[#17171a] border-t sm:border border-zinc-200 dark:border-[#34252f] rounded-t-3xl sm:rounded-3xl p-5 max-h-[90vh] overflow-y-auto shadow-2xl transition-all ${
+        className={`w-full max-w-md bg-[#161618] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl p-5 max-h-[90vh] overflow-y-auto shadow-2xl transition-all ${
           isDragging
             ? ''
             : isClosing
@@ -125,45 +124,45 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
           onTouchEnd={handleTouchEnd}
           onMouseDown={handleTouchStart}
         >
-          <div className="w-12 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 transition-all" />
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-wider mt-1.5">
+          <div className="w-12 h-1.5 rounded-full bg-zinc-700 transition-all" />
+          <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mt-1.5">
             Потяните вниз для закрытия
           </span>
         </div>
 
         {/* Product Image */}
         {gift.imageUrl ? (
-          <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-[#34252f] mt-2 mb-4">
+          <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 mt-2 mb-4">
             <img src={gift.imageUrl} alt={gift.title} className="w-full h-full object-cover" />
           </div>
         ) : (
-          <div className="w-full h-32 rounded-2xl bg-zinc-100 dark:bg-[#241920] border border-zinc-200 dark:border-[#34252f] flex items-center justify-center text-4xl mt-2 mb-4">
-            🎁
+          <div className="w-full h-32 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center text-4xl mt-2 mb-4 text-zinc-600">
+            <GiftIcon size={40} />
           </div>
         )}
 
-        {/* Title (High-contrast Apple typography) */}
-        <h2 className="text-lg font-black text-zinc-900 dark:text-white leading-snug">
+        {/* Title */}
+        <h2 className="text-lg font-black text-white leading-snug">
           {gift.title}
         </h2>
 
         {/* Price and Priority Row */}
         <div className="mt-2.5 flex items-center gap-2.5 flex-wrap">
-          <div className="text-xl font-black text-[#c4457b]">
+          <div className="text-xl font-extrabold text-white">
             {priceText}
           </div>
-          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold border ${priorityLabel.bg}`}>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-bold border tracking-wider uppercase ${priorityLabel.bg}`}>
             {priorityLabel.text}
           </span>
         </div>
 
-        {/* Description / Notes from Creator (Anti-slop clean styling) */}
+        {/* Description / Notes from Creator */}
         {gift.description && (
-          <div className="mt-4 p-3.5 rounded-2xl bg-zinc-50 dark:bg-[#241920]/80 border border-zinc-200 dark:border-[#34252f]">
-            <div className="text-[11px] font-black uppercase tracking-wider text-[#c4457b]">
-              Заметки от создателя:
+          <div className="mt-4 p-3.5 rounded-2xl bg-[#1c1c20] border border-white/5">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+              Заметки:
             </div>
-            <p className="text-xs text-zinc-800 dark:text-zinc-200 mt-1 leading-relaxed whitespace-pre-wrap font-medium">
+            <p className="text-xs text-zinc-200 mt-1 leading-relaxed whitespace-pre-wrap font-medium">
               {gift.description}
             </p>
           </div>
@@ -176,10 +175,10 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
               onHaptic?.()
               onOpenLink(gift.url!)
             }}
-            className="mt-3.5 w-full py-3 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-900 dark:text-white flex items-center justify-between transition-colors active-press"
+            className="mt-3.5 w-full py-3 px-4 rounded-xl bg-[#1c1c20] hover:bg-zinc-800 border border-white/10 text-xs font-bold text-white flex items-center justify-between transition-colors active:scale-[0.98]"
           >
             <span className="flex items-center gap-2 truncate">
-              <ExternalLink size={15} className="text-[#c4457b] shrink-0" />
+              <ExternalLink size={15} className="text-zinc-400 shrink-0" />
               <span className="truncate">Открыть в магазине (Wildberries / Ozon)</span>
             </span>
             <span className="text-zinc-400 text-sm ml-2">↗</span>
@@ -187,28 +186,52 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
         )}
 
         {/* Crowdfunding progress for friends */}
-        {!isOwner && (gift.isCrowdfund || isCrowdfundAvailable) && pledged > 0 && (
-          <div className="mt-4 p-3 rounded-xl bg-zinc-50 dark:bg-[#241920] border border-zinc-200 dark:border-[#c4457b]/30">
-            <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-              <span className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200">
-                <Users size={14} className="text-[#c4457b]" />
+        {!isOwner && (gift.isCrowdfund || pledged > 0) && pledged > 0 && (
+          <div className="mt-4 p-3.5 rounded-xl bg-[#1c1c20] border border-white/5">
+            <div className="flex items-center justify-between text-xs font-bold mb-2">
+              <span className="flex items-center gap-1.5 text-zinc-300">
+                <Users size={14} className="text-zinc-400" />
                 <span>Собрано на подарок:</span>
               </span>
-              <span className="font-black text-[#c4457b]">
+              <span className="font-extrabold text-white">
                 {formatPrice(pledged, currencyMode)} ({progressPercent}%)
               </span>
             </div>
-            <div className="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+            <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-[#c4457b] to-[#d98aab] transition-all duration-500 rounded-full"
+                className="h-full bg-white transition-all duration-500 rounded-full"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
+
+            {/* List of contributors with usernames */}
+            {gift.pledges && gift.pledges.length > 0 && (
+              <div className="mt-3 pt-2.5 border-t border-white/5">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Уже скинулись ({gift.pledges.length}):
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {gift.pledges.map((p) => (
+                    <span
+                      key={p.id}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[11px] text-zinc-200"
+                    >
+                      <span className="font-semibold text-white">
+                        {p.userUsername ? `@${p.userUsername}` : p.userName}
+                      </span>
+                      <span className="text-zinc-400 font-medium">
+                        ({formatPrice(p.amount, currencyMode)})
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* ACTION BUTTONS (High-contrast Apple HIG) */}
-        <div className="mt-5 pt-3.5 border-t border-zinc-200 dark:border-[#34252f]">
+        {/* ACTION BUTTONS */}
+        <div className="mt-5 pt-3.5 border-t border-white/10">
           {isOwner ? (
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -217,7 +240,7 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
                   handleDismiss()
                   onEdit(gift)
                 }}
-                className="py-3 px-4 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs font-extrabold text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-transparent flex items-center justify-center gap-2 transition-all active-press"
+                className="py-3 px-4 rounded-xl bg-[#27272a] hover:bg-zinc-700 text-xs font-bold text-white border border-white/5 flex items-center justify-center gap-2 transition-all active:scale-95"
               >
                 <Edit3 size={15} />
                 <span>Редактировать</span>
@@ -229,7 +252,7 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
                   handleDismiss()
                   onDelete(gift)
                 }}
-                className="py-3 px-4 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-rose-950/40 border border-red-200 dark:border-rose-900/50 text-xs font-extrabold text-red-600 dark:text-rose-400 flex items-center justify-center gap-2 transition-all active-press"
+                className="py-3 px-4 rounded-xl bg-red-950/30 hover:bg-red-900/40 border border-red-500/20 text-xs font-bold text-red-400 flex items-center justify-center gap-2 transition-all active:scale-95"
               >
                 <Trash2 size={15} />
                 <span>Удалить</span>
@@ -240,9 +263,9 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
               {gift.isBooked ? (
                 gift.isBookedByMe ? (
                   <div className="space-y-2">
-                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
-                      <CheckCircle2 size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-                      <span>Вы забронировали этот подарок! 🎉</span>
+                    <div className="p-3 rounded-xl bg-zinc-800/80 border border-white/10 text-white text-xs font-bold flex items-center gap-2">
+                      <CheckCircle2 size={16} className="shrink-0 text-white" />
+                      <span>Вы забронировали этот подарок!</span>
                     </div>
                     <button
                       onClick={() => {
@@ -250,17 +273,17 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
                         handleDismiss()
                         onUnbook(gift)
                       }}
-                      className="w-full py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                      className="w-full py-2.5 rounded-xl border border-zinc-700 text-xs font-bold text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
                     >
                       Отменить мою бронь
                     </button>
                   </div>
                 ) : (
-                  <div className="p-3 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 text-xs font-bold flex items-center gap-2">
+                  <div className="p-3 rounded-xl bg-zinc-800/80 border border-white/10 text-zinc-400 text-xs font-bold flex items-center gap-2">
                     <Lock size={15} className="shrink-0" />
                     <span>
                       Подарок уже забронирован{' '}
-                      {gift.bookedByUsername ? `@${gift.bookedByUsername}` : (gift.bookedByName || 'другом')} 🤫
+                      {gift.bookedByUsername ? `@${gift.bookedByUsername}` : (gift.bookedByName || 'другом')}
                     </span>
                   </div>
                 )
@@ -272,25 +295,23 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
                       handleDismiss()
                       onBook(gift)
                     }}
-                    className="w-full py-3.5 rounded-full bg-[#c4457b] hover:bg-[#b03b6d] text-white text-xs font-black shadow-lg shadow-[#c4457b]/25 active-press flex items-center justify-center gap-2 transition-all"
+                    className="w-full py-3.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-black shadow-lg active:scale-95 flex items-center justify-center gap-2 transition-all"
                   >
                     <GiftIcon size={16} />
                     <span>Подарить целиком (Забронировать)</span>
                   </button>
 
-                  {(isCrowdfundAvailable || gift.isCrowdfund) && (
-                    <button
-                      onClick={() => {
-                        onHaptic?.()
-                        handleDismiss()
-                        onPledge(gift)
-                      }}
-                      className="w-full py-3 rounded-full bg-zinc-100 hover:bg-zinc-200 dark:bg-[#241920] border border-zinc-200 dark:border-[#c4457b]/40 text-zinc-900 dark:text-[#d98aab] text-xs font-black active-press flex items-center justify-center gap-2 transition-all"
-                    >
-                      <Users size={15} className="text-[#c4457b]" />
-                      <span>Скинуться с друзьями</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      onHaptic?.()
+                      handleDismiss()
+                      onPledge(gift)
+                    }}
+                    className="w-full py-3 rounded-xl bg-[#27272a] hover:bg-zinc-700 border border-white/10 text-white text-xs font-bold active:scale-95 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  >
+                    <Users size={15} className="text-zinc-400" />
+                    <span>{pledged > 0 ? 'Скинуться с друзьями (Внести долю)' : 'Предложить скинуться с друзьями 🤝'}</span>
+                  </button>
                 </>
               )}
             </div>
