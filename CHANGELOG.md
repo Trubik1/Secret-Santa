@@ -85,3 +85,4 @@
 - **[2026-11-12]** feat(crowdfund): allow any friend to propose chipping in on any gift
 - **[2026-11-12]** feat(notifications): add notifyCrowdfundCompleted bot notification on 100% goal
 - **[2026-11-12]** feat(ui): build GroupCollectionCard component with full-width layout
+- **[2026-11-12]** feat(ui): display live list of contributors with Telegram usernames and sums
