@@ -82,3 +82,4 @@
 - **[2026-11-12]** test(security): create automated security audit suite against SQL injection
 - **[2026-11-12]** test(security): verify IDOR and unauthorized parameter tampering prevention
 - **[2026-11-12]** test(security): confirm prepared statement bindings across all SQLite endpoints
+- **[2026-11-12]** feat(crowdfund): allow any friend to propose chipping in on any gift

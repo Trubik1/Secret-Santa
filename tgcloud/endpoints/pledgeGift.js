@@ -1,7 +1,7 @@
 import { db, EndpointError } from 'sdk'
 import { eq, and } from 'sdk/db'
-import { gifts, giftPledges } from '../schema.js'
-import { notifyCrowdfundPledge } from '../lib/notifications.js'
+import { gifts, giftPledges, users } from '../schema.js'
+import { notifyCrowdfundPledge, notifyCrowdfundCompleted } from '../lib/notifications.js'
 
 export default async function (input, ctx) {
   const caller = ctx.initData?.user
@@ -25,12 +25,19 @@ export default async function (input, ctx) {
     throw new EndpointError('Подарок не найден', { code: 'NOT_FOUND' })
   }
 
-  if (!gift.isCrowdfund) {
-    throw new EndpointError('Для этого подарка не включен совместный сбор', { code: 'NOT_CROWDFUND' })
-  }
-
   if (gift.userId === caller.id) {
     throw new EndpointError('Вы не можете скидываться на собственный подарок', { code: 'CANNOT_PLEDGE_OWN' })
+  }
+
+  // Any friend can propose / initiate a group collection on any gift
+  const targetPrice = gift.price > 0 ? gift.price : (gift.targetAmount || pledgeAmount)
+  if (!gift.isCrowdfund) {
+    await db.update(gifts).set({
+      isCrowdfund: true,
+      targetAmount: targetPrice,
+    }).where(eq(gifts.id, giftId)).run()
+    gift.isCrowdfund = true
+    gift.targetAmount = targetPrice
   }
 
   const callerName = [caller.first_name, caller.last_name].filter(Boolean).join(' ') || 'Друг'
@@ -63,34 +70,58 @@ export default async function (input, ctx) {
   const updatedPledges = await db.select().from(giftPledges).where(eq(giftPledges.giftId, giftId)).all()
   const totalPledged = updatedPledges.reduce((sum, p) => sum + (p.amount || 0), 0)
 
-  // If collected amount covers the target, mark gift as booked
-  if (gift.targetAmount > 0 && totalPledged >= gift.targetAmount && !gift.isBooked) {
+  // If collected amount covers the target (100%), automatically mark gift as booked by group
+  const isGoalReached = targetPrice > 0 && totalPledged >= targetPrice
+  if (isGoalReached && !gift.isBooked) {
     await db.update(gifts).set({
       isBooked: true,
       bookedByUserId: caller.id,
       bookedAt: new Date().toISOString(),
     }).where(eq(gifts.id, giftId)).run()
-  }
 
-  // Send notifications to co-contributors
-  try {
-    const otherPledgers = updatedPledges.filter(p => p.userId !== caller.id)
-    await notifyCrowdfundPledge({
-      giftTitle: gift.title,
-      pledgerName: callerName,
-      pledgerUsername: callerUsername,
-      amount: pledgeAmount,
-      targetAmount: gift.targetAmount || gift.price,
-      currentTotal: totalPledged,
-      existingPledgers: otherPledgers,
-    })
-  } catch (notifErr) {
-    console.warn('Pledge notification error:', notifErr)
+    // Fetch wishlist owner name
+    let ownerName = 'друга'
+    try {
+      const owner = await db.select().from(users).where(eq(users.id, gift.userId)).get()
+      if (owner && owner.firstName) {
+        ownerName = owner.firstName
+      }
+    } catch (_) {}
+
+    // Send celebratory notification to all contributors: "Сбор завершён! Покупайте подарок 🎁"
+    try {
+      await notifyCrowdfundCompleted({
+        giftTitle: gift.title,
+        giftPrice: targetPrice,
+        giftUrl: gift.url,
+        ownerName,
+        participants: updatedPledges,
+      })
+    } catch (notifErr) {
+      console.warn('Completed notification error:', notifErr)
+    }
+  } else {
+    // Send notifications to other co-contributors about the new pledge
+    try {
+      const otherPledgers = updatedPledges.filter(p => p.userId !== caller.id)
+      await notifyCrowdfundPledge({
+        giftTitle: gift.title,
+        pledgerName: callerName,
+        pledgerUsername: callerUsername,
+        amount: pledgeAmount,
+        targetAmount: targetPrice,
+        currentTotal: totalPledged,
+        existingPledgers: otherPledgers,
+      })
+    } catch (notifErr) {
+      console.warn('Pledge notification error:', notifErr)
+    }
   }
 
   return {
     success: true,
     totalPledged,
+    isBooked: isGoalReached || gift.isBooked,
     pledges: updatedPledges.map(p => ({
       id: p.id,
       userName: p.userName,
