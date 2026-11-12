@@ -16,6 +16,8 @@ export interface UserProfile {
   photoUrl?: string | null
   eventTitle: string
   eventDate?: string | null // YYYY-MM-DD
+  isPremium?: boolean
+  coverUrl?: string | null
 }
 
 export interface GiftPledge {
