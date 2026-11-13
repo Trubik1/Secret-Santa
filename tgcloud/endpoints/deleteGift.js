@@ -1,6 +1,6 @@
 import { db, EndpointError } from 'sdk'
 import { eq, and } from 'sdk/db'
-import { gifts, giftPledges } from '../schema.js'
+import { gifts, giftPledges, giftEventsLog } from '../schema.js'
 
 export default async function (input, ctx) {
   const caller = ctx.initData?.user
@@ -22,6 +22,24 @@ export default async function (input, ctx) {
     throw new EndpointError('Вы не можете удалить чужой подарок', { code: 'FORBIDDEN' })
   }
 
+  // Record gift event for analytics & completed goals tracking
+  const reason = input?.reason || 'just_delete'
+  const eventType = (reason === 'gifted' || reason === 'bought_self') ? 'completed' : 'deleted'
+
+  try {
+    await db.insert(giftEventsLog).values({
+      id: crypto.randomUUID(),
+      giftId: existing.id,
+      userId: caller.id,
+      eventType,
+      reason,
+      giftTitle: existing.title,
+      giftPrice: existing.price || 0,
+    }).run()
+  } catch (err) {
+    console.warn('Failed to log gift event:', err)
+  }
+
   // Delete child records first (since FKs are disabled in SQLite)
   await db.delete(giftPledges).where(eq(giftPledges.giftId, giftId)).run()
   // Delete the gift itself
@@ -29,5 +47,7 @@ export default async function (input, ctx) {
 
   return {
     success: true,
+    reason,
+    eventType,
   }
 }

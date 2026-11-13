@@ -210,8 +210,25 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
       if (!isOwner) {
         throw new Error('Вы не можете удалять подарки из чужого вишлиста')
       }
+      const giftToDelete = giftsList.find((g) => g.id === input.id)
       giftsList = giftsList.filter((g) => g.id !== input.id)
       saveMockGifts(giftsList)
+
+      // Record in local mock events
+      try {
+        const events = JSON.parse(localStorage.getItem('wishlist_mock_events') || '[]')
+        events.push({
+          id: Date.now(),
+          giftId: input.id,
+          title: giftToDelete?.title || 'Подарок',
+          price: giftToDelete?.price || 0,
+          reason: input.reason || 'just_delete',
+          isCompleted: input.reason === 'gifted' || input.reason === 'bought_self',
+          createdAt: new Date().toISOString(),
+        })
+        localStorage.setItem('wishlist_mock_events', JSON.stringify(events))
+      } catch (_) {}
+
       return { success: true } as unknown as T
     }
 
@@ -324,6 +341,60 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
     case 'createStarInvoice': {
       // In dev/mock mode, return a dummy invoice or simulated response
       return { ok: true, invoiceLink: `https://t.me/$mock_star_${Date.now()}` } as unknown as T
+    }
+
+    case 'getAdminStats': {
+      const mockEvents = JSON.parse(localStorage.getItem('wishlist_mock_events') || '[]')
+      const totalGiftsCount = giftsList.length
+      const totalGiftsValue = giftsList.reduce((sum, g) => sum + (g.price || 0), 0)
+      const avgPrice = totalGiftsCount > 0 ? Math.round(totalGiftsValue / totalGiftsCount) : 0
+
+      const giftedCount = mockEvents.filter((e: any) => e.reason === 'gifted').length
+      const boughtSelfCount = mockEvents.filter((e: any) => e.reason === 'bought_self').length
+      const changedMindCount = mockEvents.filter((e: any) => e.reason === 'changed_mind').length
+      const justDeleteCount = mockEvents.filter((e: any) => e.reason === 'just_delete').length
+      const completedEvents = mockEvents.filter((e: any) => e.isCompleted)
+      const completedValue = completedEvents.reduce((sum: number, e: any) => sum + (e.price || 0), 0)
+
+      return {
+        users: {
+          totalUsers: 1,
+          proUsers: profile.isPremium ? 1 : 0,
+          recentUsers: [
+            {
+              id: profile.id,
+              firstName: profile.firstName,
+              username: profile.username || 'creator',
+              isPremium: profile.isPremium,
+              createdAt: '2026-11-10T12:00:00Z',
+              giftsCount: giftsList.length,
+            },
+          ],
+        },
+        gifts: {
+          totalActiveGifts: totalGiftsCount,
+          bookedGiftsCount: giftsList.filter((g) => g.isBooked).length,
+          crowdfundGiftsCount: giftsList.filter((g) => g.isCrowdfund).length,
+          avgGiftsPerUser: totalGiftsCount,
+          avgWishlistValue: totalGiftsValue,
+          avgGiftPrice: avgPrice,
+          totalGiftsValue,
+        },
+        fulfillmentMonth: {
+          completedCount: completedEvents.length,
+          completedValue,
+          reasonsBreakdown: {
+            gifted: giftedCount,
+            boughtSelf: boughtSelfCount,
+            changedMind: changedMindCount,
+            justDelete: justDeleteCount,
+          },
+        },
+        crowdfund: {
+          totalPledgesCount: 0,
+          totalPledgedSum: 0,
+        },
+      } as unknown as T
     }
 
     default:

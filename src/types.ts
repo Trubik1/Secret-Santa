@@ -71,6 +71,46 @@ export interface WishlistData {
   gifts: Gift[]
 }
 
+export type DeleteReason = 'gifted' | 'bought_self' | 'changed_mind' | 'just_delete'
+
+export interface AdminStats {
+  users: {
+    total: number
+    premium: number
+    recent: Array<{
+      id: number
+      name: string
+      username: string | null
+      isPremium: boolean
+      createdAt: string | null
+    }>
+  }
+  gifts: {
+    total: number
+    booked: number
+    crowdfund: number
+    avgPerUser: number
+    avgWishlistPrice: number
+    avgGiftPrice: number
+    totalValue: number
+  }
+  completedLastMonth: {
+    count: number
+    totalValue: number
+    reasons: {
+      gifted: number
+      boughtSelf: number
+      changedMind: number
+      justDelete: number
+    }
+  }
+  pledges: {
+    totalCount: number
+    totalAmount: number
+  }
+  generatedAt: string
+}
+
 export interface ParsedProduct {
   title: string
   imageUrl: string

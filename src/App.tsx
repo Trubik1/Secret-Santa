@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Gift, WishlistData } from './types'
+import { Gift, WishlistData, DeleteReason } from './types'
 import { useTelegram } from './hooks/useTelegram'
 import {
   serverlessCall,
@@ -26,6 +26,8 @@ import { DevToolsBar } from './components/DevToolsBar'
 import { CoverCropModal } from './components/CoverCropModal'
 import { PremiumModal } from './components/PremiumModal'
 import { GroupCollectionCard } from './components/GroupCollectionCard'
+import { DeleteReasonModal } from './components/DeleteReasonModal'
+import { AdminDashboardModal } from './components/AdminDashboardModal'
 import { Plus, CheckCircle2 } from 'lucide-react'
 
 function extractStartParam(): string | null {
@@ -178,10 +180,12 @@ export function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingGift, setEditingGift] = useState<Gift | null>(null)
   const [pledgingGift, setPledgingGift] = useState<Gift | null>(null)
+  const [deletingGift, setDeletingGift] = useState<Gift | null>(null)
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isCoverModalOpen, setIsCoverModalOpen] = useState(false)
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false)
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false)
   const [premiumReason, setPremiumReason] = useState<'limit' | 'cover' | 'general'>('general')
 
   const handleSaveCover = async (coverUrl: string) => {
@@ -299,16 +303,27 @@ export function App() {
     await loadWishlist()
   }
 
-  const handleDeleteGift = async (gift: Gift) => {
-    if (!window.confirm(`Удалить "${gift.title}" из вишлиста?`)) return
+  const handleRequestDeleteGift = (gift: Gift) => {
+    haptics.impact('light')
+    setSelectedGiftDetail(null)
+    setDeletingGift(gift)
+  }
+
+  const handleConfirmDeleteGift = async (gift: Gift, reason: DeleteReason) => {
     haptics.impact('medium')
     try {
-      setSelectedGiftDetail(null)
-      await serverlessCall('deleteGift', { id: gift.id })
-      showToast('Желание удалено')
+      setDeletingGift(null)
+      await serverlessCall('deleteGift', { id: gift.id, reason })
+      if (reason === 'gifted' || reason === 'bought_self') {
+        fireConfetti()
+        haptics.notification('success')
+        showToast('Поздравляем с исполнением желания! 🎉')
+      } else {
+        showToast('Желание удалено из вишлиста')
+      }
       await loadWishlist()
     } catch (err: any) {
-      showToast(err.message || 'Не удалось удалить')
+      showToast(err.message || 'Не удалось удалить желание')
     }
   }
 
@@ -570,6 +585,11 @@ export function App() {
                 onSaveProfile={handleSaveProfile}
                 onHaptic={() => haptics.impact('light')}
                 onShowToast={showToast}
+                onOpenPremiumModal={() => {
+                  setPremiumReason('general')
+                  setIsPremiumModalOpen(true)
+                }}
+                onOpenAdminModal={() => setIsAdminModalOpen(true)}
               />
             )}
           </>
@@ -590,7 +610,7 @@ export function App() {
         currencyMode={currencyMode}
         onClose={() => setSelectedGiftDetail(null)}
         onEdit={handleEditGift}
-        onDelete={handleDeleteGift}
+        onDelete={handleRequestDeleteGift}
         onBook={handleBookGift}
         onUnbook={handleUnbookGift}
         onPledge={handleOpenPledge}
@@ -663,6 +683,24 @@ export function App() {
         onClose={() => setIsPremiumModalOpen(false)}
         onSuccessUpgrade={handleUpgradeSuccess}
         onHaptic={() => haptics.impact('light')}
+      />
+
+      {/* Delete Reason Modal */}
+      <DeleteReasonModal
+        isOpen={Boolean(deletingGift)}
+        gift={deletingGift}
+        onClose={() => setDeletingGift(null)}
+        onConfirmDelete={handleConfirmDeleteGift}
+        onHaptic={() => haptics.impact('light')}
+      />
+
+      {/* Admin Dashboard Modal (Creator Only) */}
+      <AdminDashboardModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        currencyMode={currencyMode}
+        onHaptic={() => haptics.impact('light')}
+        onShowToast={showToast}
       />
 
       {/* Floating Toast Notification */}

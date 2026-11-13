@@ -57,3 +57,18 @@ export const giftPledges = table('gift_pledges', {
   giftPledgesIdx: index('idx_pledges_gift_id').on(t.giftId),
   userPledgesIdx: index('idx_pledges_user_id').on(t.userId),
 }))
+
+// Gift events log (for completion tracking, deletion reasons, and admin analytics)
+export const giftEventsLog = table('gift_events_log', {
+  id: text('id').primaryKey(), // UUID
+  giftId: text('gift_id'),
+  userId: integer('user_id').notNull(),
+  eventType: text('event_type').notNull(), // 'completed', 'deleted'
+  reason: text('reason').notNull(), // 'gifted', 'bought_self', 'changed_mind', 'just_delete'
+  giftTitle: text('gift_title'),
+  giftPrice: integer('gift_price').default(0),
+  createdAt: text('created_at').default(sql`(datetime('now'))`),
+}, (t) => ({
+  userEventsIdx: index('idx_events_user_id').on(t.userId),
+  eventDateIdx: index('idx_events_created_at').on(t.createdAt),
+}))
