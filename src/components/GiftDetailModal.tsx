@@ -176,7 +176,7 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
         )}
 
         {/* Marketplace Direct Link Button */}
-        {gift.url && (
+        {gift.url && /^https?:\/\//i.test(gift.url) && (
           <button
             onClick={() => {
               onHaptic?.()

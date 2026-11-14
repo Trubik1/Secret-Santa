@@ -61,6 +61,11 @@ export default async function (input, ctx) {
     throw new EndpointError('Сумма взноса должна быть больше нуля', { code: 'INVALID_AMOUNT' })
   }
 
+  // Prevent crowdfunding on gifts already booked individually by another guest
+  if (gift.isBooked && !gift.isCrowdfund) {
+    throw new EndpointError('Этот подарок уже забронирован другим гостем', { code: 'ALREADY_BOOKED' })
+  }
+
   // Any friend can propose / initiate a group collection on any gift
   if (!gift.isCrowdfund) {
     await db.update(gifts).set({

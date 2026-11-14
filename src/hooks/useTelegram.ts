@@ -118,18 +118,31 @@ export function useTelegram() {
   }), [tg])
 
   const openTelegramLink = (url: string) => {
+    if (!url || typeof url !== 'string') return
+    const trimmed = url.trim()
+    if (!/^https?:\/\/t\.me\//i.test(trimmed) && !trimmed.startsWith('tg://')) {
+      console.warn('Blocked non-telegram link:', trimmed)
+      return
+    }
     if (tg?.openTelegramLink) {
-      tg.openTelegramLink(url)
+      tg.openTelegramLink(trimmed)
     } else {
-      window.open(url, '_blank')
+      window.open(trimmed, '_blank', 'noopener,noreferrer')
     }
   }
 
   const openLink = (url: string) => {
+    if (!url || typeof url !== 'string') return
+    const trimmed = url.trim()
+    // Restrict strictly to http/https protocols to prevent javascript: or data: injection
+    if (!/^https?:\/\//i.test(trimmed)) {
+      console.warn('Blocked unsafe URL scheme:', trimmed)
+      return
+    }
     if (tg?.openLink) {
-      tg.openLink(url)
+      tg.openLink(trimmed)
     } else {
-      window.open(url, '_blank')
+      window.open(trimmed, '_blank', 'noopener,noreferrer')
     }
   }
 

@@ -38,8 +38,8 @@ export async function notifyGiftBooked({ ownerId, bookerId, giftTitle, giftPrice
   // 2. Notify guest with details and reminder
   if (bookerId) {
     const priceStr = giftPrice > 0 ? ` за <b>${giftPrice.toLocaleString('ru-RU')} ₽</b>` : ''
-    const linkStr = giftUrl ? `\n🔗 <b>Ссылка на покупку:</b> ${giftUrl}` : ''
-    const dateStr = eventDate ? `\n📅 <b>Дата праздника:</b> ${eventDate}` : ''
+    const linkStr = giftUrl ? `\n🔗 <b>Ссылка на покупку:</b> ${escapeHtml(giftUrl)}` : ''
+    const dateStr = eventDate ? `\n📅 <b>Дата праздника:</b> ${escapeHtml(eventDate)}` : ''
 
     await sendSafeMessage(
       bookerId,
@@ -79,7 +79,7 @@ export async function notifyCrowdfundPledge({ giftTitle, pledgerName, pledgerUse
  * Notify all crowdfunding participants when the goal (100%) is achieved.
  */
 export async function notifyCrowdfundCompleted({ giftTitle, giftPrice: _giftPrice, giftUrl, ownerName, participants = [] }) {
-  const linkStr = giftUrl ? `\n🔗 <b>Ссылка на покупку:</b> ${giftUrl}` : ''
+  const linkStr = giftUrl ? `\n🔗 <b>Ссылка на покупку:</b> ${escapeHtml(giftUrl)}` : ''
   const targetUserStr = ownerName ? ` для <b>${escapeHtml(ownerName)}</b>` : ''
 
   const messageText =

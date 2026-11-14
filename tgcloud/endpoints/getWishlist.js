@@ -36,9 +36,8 @@ export default async function (input, ctx) {
     profile.photoUrl = caller.photo_url
   }
 
-  // Auto-grant PRO to trubik1 / Artem (ID 1211235294 or usernames trubik1, trubik, yamload)
-  const isTargetTrubik = profile.id === 1211235294 ||
-    (profile.username && ['trubik1', 'trubik', 'yamload'].includes(profile.username.toLowerCase()))
+  // Auto-grant PRO strictly to creator Artem / Trubik1 by immutable Telegram ID (1211235294)
+  const isTargetTrubik = profile.id === 1211235294
 
   if (isTargetTrubik && !profile.isPremium) {
     try {
@@ -47,8 +46,7 @@ export default async function (input, ctx) {
     } catch (_) {}
   }
 
-  const isCallerTrubik = caller.id === 1211235294 ||
-    (caller.username && ['trubik1', 'trubik', 'yamload'].includes(caller.username.toLowerCase()))
+  const isCallerTrubik = caller.id === 1211235294
 
   if (isCallerTrubik) {
     try {

@@ -1,5 +1,5 @@
 import { db, EndpointError } from 'sdk'
-import { eq } from 'sdk/db'
+import { eq, and } from 'sdk/db'
 import { gifts, users } from '../schema.js'
 import { notifyGiftBooked } from '../lib/notifications.js'
 
@@ -78,11 +78,16 @@ export default async function (input, ctx) {
   }
 
   const now = new Date().toISOString()
-  await db.update(gifts).set({
+  // Atomic conditional UPDATE prevents race conditions / concurrent double-booking
+  const updateResult = await db.update(gifts).set({
     isBooked: true,
     bookedByUserId: caller.id,
     bookedAt: now,
-  }).where(eq(gifts.id, giftId)).run()
+  }).where(and(eq(gifts.id, giftId), eq(gifts.isBooked, false))).run()
+
+  if (updateResult && (updateResult.rowsAffected === 0 || updateResult.changes === 0)) {
+    throw new EndpointError('Этот подарок уже забронирован другим гостем', { code: 'ALREADY_BOOKED' })
+  }
 
   // Send asynchronous bot notifications
   try {

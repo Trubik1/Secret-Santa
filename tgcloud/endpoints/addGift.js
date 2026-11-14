@@ -18,19 +18,38 @@ export default async function (input, ctx) {
     }
   }
 
-  const title = input?.title?.trim()
-  if (!title) {
+  const rawTitle = input?.title?.trim()
+  if (!rawTitle) {
     throw new EndpointError('Название подарка обязательно', { code: 'INVALID_TITLE' })
   }
+  const title = rawTitle.slice(0, 150)
 
   const price = Math.max(0, parseInt(input.price, 10) || 0)
   const isCrowdfund = Boolean(input.isCrowdfund)
   const targetAmount = isCrowdfund ? Math.max(0, parseInt(input.targetAmount || input.price, 10) || price) : 0
   const priority = [1, 2, 3].includes(parseInt(input.priority, 10)) ? parseInt(input.priority, 10) : 1
-  const categoryId = input.categoryId?.trim() || 'other'
-  const url = input.url?.trim() || null
-  const imageUrl = input.imageUrl?.trim() || null
-  const description = input.description?.trim() || null
+  const categoryId = (input.categoryId?.trim() || 'other').slice(0, 50)
+
+  // URL protocol verification (only http/https allowed)
+  const rawUrl = input.url?.trim() || null
+  let url = null
+  if (rawUrl) {
+    const trimmedUrl = rawUrl.slice(0, 1000)
+    if (/^https?:\/\//i.test(trimmedUrl)) {
+      url = trimmedUrl
+    }
+  }
+
+  const rawImageUrl = input.imageUrl?.trim() || null
+  let imageUrl = null
+  if (rawImageUrl) {
+    const trimmedImg = rawImageUrl.slice(0, 1000)
+    if (/^https?:\/\//i.test(trimmedImg) || trimmedImg.startsWith('data:image/')) {
+      imageUrl = trimmedImg
+    }
+  }
+
+  const description = input.description ? input.description.trim().slice(0, 1000) : null
 
   const id = crypto.randomUUID()
 

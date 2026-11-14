@@ -108,21 +108,63 @@ function decodeHtmlEntities(str) {
     .replace(/&#x2F;/g, '/')
 }
 
+const ALLOWED_MARKETPLACE_HOSTS = [
+  // Wildberries
+  'wildberries.ru',
+  'wb.ru',
+  'wildberries.by',
+  'wildberries.kz',
+  'wildberries.uz',
+  'wildberries.am',
+  // Ozon
+  'ozon.ru',
+  // Yandex Market
+  'market.yandex.ru',
+  // AliExpress
+  'aliexpress.ru',
+  // Gold Apple, MegaMarket, DNS
+  'goldapple.ru',
+  'megamarket.ru',
+  'dns-shop.ru',
+]
+
+function isHostAllowed(hostname) {
+  if (!hostname) return false
+  const host = hostname.toLowerCase().trim()
+  return ALLOWED_MARKETPLACE_HOSTS.some(allowed => host === allowed || host.endsWith('.' + allowed))
+}
+
 /**
  * Main parser entry point.
  */
 export async function parseProductUrl(targetUrl) {
-  const cleanUrl = targetUrl.trim()
+  const cleanUrl = targetUrl?.trim()
   const fallback = {
     title: '',
     imageUrl: '',
     price: 0,
     categoryId: 'other',
-    url: cleanUrl,
+    url: cleanUrl || '',
     parsed: false,
   }
 
-  if (!cleanUrl || !cleanUrl.startsWith('http')) {
+  if (!cleanUrl) {
+    return fallback
+  }
+
+  let parsedUrl
+  try {
+    parsedUrl = new URL(cleanUrl)
+  } catch (_) {
+    return fallback
+  }
+
+  // SSRF Protection: strictly enforce HTTPS and trusted marketplace domains
+  if (parsedUrl.protocol !== 'https:') {
+    return fallback
+  }
+
+  if (!isHostAllowed(parsedUrl.hostname)) {
     return fallback
   }
 
