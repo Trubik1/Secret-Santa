@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Gift, WishlistData, DeleteReason, UserProfile } from './types'
 import { useTelegram } from './hooks/useTelegram'
 import {
@@ -491,12 +491,111 @@ export function App() {
     setSelectedGiftDetail(gift)
   }
 
-  const handleNavTabChange = (tab: NavTabType) => {
+  // Navigation tabs config & swipe state
+  const NAV_TABS: NavTabType[] = useMemo(() => ['santa', 'my', 'friends', 'settings'], [])
+  const currentTabIndex = Math.max(0, NAV_TABS.indexOf(currentNavTab))
+
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [swipeOffset, setSwipeOffset] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const touchStartRef = useRef<{ x: number; y: number; time: number; isHorizontal: boolean | null }>({
+    x: 0,
+    y: 0,
+    time: 0,
+    isHorizontal: null,
+  })
+
+  const handleNavTabChange = useCallback((tab: NavTabType) => {
     if (tab === 'my' && isViewingFriend) {
       handleBackToMyWishlist()
       return
     }
-    setCurrentNavTab(tab)
+    if (tab !== currentNavTab) {
+      setIsTransitioning(true)
+      setCurrentNavTab(tab)
+      window.scrollTo({ top: 0, behavior: 'instant' })
+      setTimeout(() => {
+        setIsTransitioning(false)
+      }, 320)
+    }
+  }, [currentNavTab, isViewingFriend])
+
+  // Check if any modal / overlay is currently open
+  const isAnyModalOpen = Boolean(
+    isAddModalOpen ||
+    isPremiumModalOpen ||
+    isBudgetModalOpen ||
+    isShareModalOpen ||
+    isCustomizationModalOpen ||
+    isAdminModalOpen ||
+    selectedGiftDetail ||
+    pledgingGift ||
+    deletingGift
+  )
+
+  // Horizontal swipe gestures between tabs
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isAnyModalOpen) return
+    const touch = e.touches[0]
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now(),
+      isHorizontal: null,
+    }
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isAnyModalOpen) return
+    const touch = e.touches[0]
+    const deltaX = touch.clientX - touchStartRef.current.x
+    const deltaY = touch.clientY - touchStartRef.current.y
+
+    // Determine swipe vs scroll intent on first movement
+    if (touchStartRef.current.isHorizontal === null) {
+      if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
+        touchStartRef.current.isHorizontal = Math.abs(deltaX) > Math.abs(deltaY)
+      }
+    }
+
+    if (touchStartRef.current.isHorizontal !== true) return
+
+    // Apply rubber-band dampening at boundaries
+    let offset = deltaX
+    if ((currentTabIndex === 0 && deltaX > 0) || (currentTabIndex === NAV_TABS.length - 1 && deltaX < 0)) {
+      offset = deltaX * 0.2
+    }
+
+    setIsDragging(true)
+    setSwipeOffset(offset)
+  }
+
+  const handleTouchEnd = () => {
+    if (!isDragging && touchStartRef.current.isHorizontal !== true) {
+      setIsDragging(false)
+      setSwipeOffset(0)
+      return
+    }
+
+    const deltaX = swipeOffset
+    const duration = Math.max(1, Date.now() - touchStartRef.current.time)
+    const velocity = Math.abs(deltaX) / duration
+
+    setIsDragging(false)
+    setSwipeOffset(0)
+
+    // Trigger tab change if dragged > 50px or quick flick
+    if (Math.abs(deltaX) > 50 || (Math.abs(deltaX) > 25 && velocity > 0.3)) {
+      if (deltaX < 0 && currentTabIndex < NAV_TABS.length - 1) {
+        // Swipe left -> Next tab
+        haptics.impact('light')
+        handleNavTabChange(NAV_TABS[currentTabIndex + 1])
+      } else if (deltaX > 0 && currentTabIndex > 0) {
+        // Swipe right -> Prev tab
+        haptics.impact('light')
+        handleNavTabChange(NAV_TABS[currentTabIndex - 1])
+      }
+    }
   }
 
   return (
@@ -511,7 +610,12 @@ export function App() {
       )}
 
       {/* Main Content Area: Responsive Widescreen Desktop & Smartphone */}
-      <main className="flex-1 w-full max-w-md sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pb-28 px-3 sm:px-6 transition-all duration-300">
+      <main
+        className="flex-1 w-full max-w-md sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pb-28 px-3 sm:px-6 transition-all duration-300 overflow-x-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {loading && !data ? (
           /* Minimalist Monochrome Loader */
           <div className="flex flex-col items-center justify-center min-h-[65vh] gap-4">
@@ -524,164 +628,207 @@ export function App() {
             </p>
           </div>
         ) : (
-          <>
-            {/* VIEW 1: MY WISHLIST */}
-            {currentNavTab === 'my' && data && (
-              <>
-                {/* Persistent Friend Mode Context Bar */}
-                {isViewingFriend && (
-                  <div className="mb-3 pt-1 animate-fadeIn">
-                    <div className="p-3 rounded-2xl bg-[#161618] border border-white/10 shadow-xl flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-white font-black text-sm">
-                          🎁
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                            Гостевой режим
+          <div
+            className={`flex w-full items-start ${
+              isDragging ? '' : 'transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]'
+            }`}
+            style={{
+              transform: `translateX(calc(-${currentTabIndex * 100}% + ${swipeOffset}px))`,
+            }}
+          >
+            {/* TAB 0: SECRET SANTA */}
+            <div
+              className={`w-full shrink-0 min-w-full transition-opacity duration-200 ${
+                currentNavTab === 'santa'
+                  ? 'opacity-100'
+                  : isDragging || isTransitioning
+                  ? 'opacity-70'
+                  : 'h-0 overflow-hidden opacity-0 pointer-events-none'
+              }`}
+            >
+              <SecretSantaPage
+                onBackToWishlist={() => handleNavTabChange('my')}
+                onHaptic={() => haptics.impact('light')}
+              />
+            </div>
+
+            {/* TAB 1: MY WISHLIST */}
+            <div
+              className={`w-full shrink-0 min-w-full transition-opacity duration-200 ${
+                currentNavTab === 'my'
+                  ? 'opacity-100'
+                  : isDragging || isTransitioning
+                  ? 'opacity-70'
+                  : 'h-0 overflow-hidden opacity-0 pointer-events-none'
+              }`}
+            >
+              {data && (
+                <>
+                  {/* Persistent Friend Mode Context Bar */}
+                  {isViewingFriend && (
+                    <div className="mb-3 pt-1 animate-fadeIn">
+                      <div className="p-3 rounded-2xl bg-[#161618] border border-white/10 shadow-xl flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-white font-black text-sm">
+                            🎁
                           </div>
-                          <div className="text-xs font-black text-white truncate">
-                            {data.profile.firstName || 'Друг'}
+                          <div className="min-w-0">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                              Гостевой режим
+                            </div>
+                            <div className="text-xs font-black text-white truncate">
+                              {data.profile.firstName || 'Друг'}
+                            </div>
                           </div>
                         </div>
+
+                        <button
+                          onClick={handleBackToMyWishlist}
+                          className="px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-black shrink-0 active:scale-95 transition-all shadow-md flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>← В мой вишлист</span>
+                        </button>
                       </div>
-
-                      <button
-                        onClick={handleBackToMyWishlist}
-                        className="px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-black shrink-0 active:scale-95 transition-all shadow-md flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>← В мой вишлист</span>
-                      </button>
                     </div>
+                  )}
+
+                  {/* Giftly Minimalist Hero Banner */}
+                  <HeroProfile
+                    profile={effectiveProfile || data.profile}
+                    isOwner={isEffectiveOwner}
+                    totalGifts={data.gifts.length}
+                    onOpenShare={handleShareWishlist}
+                    onOpenAdd={handleOpenAddModal}
+                    onOpenCustomization={() => setIsCustomizationModalOpen(true)}
+                    onOpenPremiumModal={(r) => {
+                      setPremiumReason(r)
+                      setIsPremiumModalOpen(true)
+                    }}
+                    onHaptic={() => haptics.impact('light')}
+                  />
+
+                  {/* Catalog Header */}
+                  <div className="pt-3 pb-2 flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                      {isEffectiveOwner
+                        ? `Каталог (${giftsFeed.length})`
+                        : `Желания ${data.profile.firstName || 'друга'} (${giftsFeed.length})`}
+                    </span>
                   </div>
-                )}
 
-                {/* Giftly Minimalist Hero Banner */}
-                <HeroProfile
-                  profile={effectiveProfile || data.profile}
-                  isOwner={isEffectiveOwner}
-                  totalGifts={data.gifts.length}
-                  onOpenShare={handleShareWishlist}
-                  onOpenAdd={handleOpenAddModal}
-                  onOpenCustomization={() => setIsCustomizationModalOpen(true)}
-                  onOpenPremiumModal={(r) => {
-                    setPremiumReason(r)
-                    setIsPremiumModalOpen(true)
-                  }}
-                  onHaptic={() => haptics.impact('light')}
-                />
-
-                {/* Catalog Header */}
-                <div className="pt-3 pb-2 flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                    {isEffectiveOwner
-                      ? `Каталог (${giftsFeed.length})`
-                      : `Желания ${data.profile.firstName || 'друга'} (${giftsFeed.length})`}
-                  </span>
-                </div>
-
-                {/* ADAPTIVE RESPONSIVE GRID (2 cols on Phone, 3-5 cols on Desktop) */}
-                <div className="mt-1">
-                  {giftsFeed.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3.5">
-                      {giftsFeed.map((gift) => {
-                        const isGroupCollection = !isEffectiveOwner && (gift.totalPledged || 0) > 0
-                        if (isGroupCollection) {
+                  {/* ADAPTIVE RESPONSIVE GRID (2 cols on Phone, 3-5 cols on Desktop) */}
+                  <div className="mt-1">
+                    {giftsFeed.length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3.5">
+                        {giftsFeed.map((gift) => {
+                          const isGroupCollection = !isEffectiveOwner && (gift.totalPledged || 0) > 0
+                          if (isGroupCollection) {
+                            return (
+                              <GroupCollectionCard
+                                key={gift.id}
+                                gift={gift}
+                                currencyMode={currencyMode}
+                                onSelect={(g) => setSelectedGiftDetail(g)}
+                                onPledge={(g) => handleOpenPledge(g)}
+                                onHaptic={() => haptics.impact('light')}
+                              />
+                            )
+                          }
                           return (
-                            <GroupCollectionCard
+                            <GiftCard
                               key={gift.id}
                               gift={gift}
+                              isOwner={isEffectiveOwner}
                               currencyMode={currencyMode}
                               onSelect={(g) => setSelectedGiftDetail(g)}
-                              onPledge={(g) => handleOpenPledge(g)}
                               onHaptic={() => haptics.impact('light')}
                             />
                           )
-                        }
-                        return (
-                          <GiftCard
-                            key={gift.id}
-                            gift={gift}
-                            isOwner={isEffectiveOwner}
-                            currencyMode={currencyMode}
-                            onSelect={(g) => setSelectedGiftDetail(g)}
-                            onHaptic={() => haptics.impact('light')}
-                          />
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    /* Clean Empty state */
-                    <div className="p-8 text-center bg-[#161618] rounded-3xl border border-white/5 mt-4 relative overflow-hidden">
-                      <div className="w-16 h-16 rounded-full bg-white/10 text-white flex items-center justify-center mx-auto mb-3">
-                        <Plus size={28} />
+                        })}
                       </div>
-                      <h3 className="font-extrabold text-base text-white">
-                        Список желаний пока пуст
-                      </h3>
-                      <p className="text-xs text-zinc-400 mt-1 max-w-xs mx-auto">
-                        {isEffectiveOwner
-                          ? 'Добавьте первые подарки из Wildberries или Ozon, чтобы друзья знали, что подарить!'
-                          : `${data.profile.firstName || 'Владелец'} пока не добавил ни одного желания.`}
-                      </p>
-                      {isEffectiveOwner && (
-                        <button
-                          onClick={handleOpenAddModal}
-                          className="mt-4 px-5 py-2.5 rounded-full bg-white text-black text-xs font-black inline-flex items-center gap-1.5 active:scale-95 hover:bg-zinc-200 transition-all shadow-md"
-                        >
-                          <Plus size={15} />
-                          Добавить первое желание
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
+                    ) : (
+                      /* Clean Empty state */
+                      <div className="p-8 text-center bg-[#161618] rounded-3xl border border-white/5 mt-4 relative overflow-hidden">
+                        <div className="w-16 h-16 rounded-full bg-white/10 text-white flex items-center justify-center mx-auto mb-3">
+                          <Plus size={28} />
+                        </div>
+                        <h3 className="font-extrabold text-base text-white">
+                          Список желаний пока пуст
+                        </h3>
+                        <p className="text-xs text-zinc-400 mt-1 max-w-xs mx-auto">
+                          {isEffectiveOwner
+                            ? 'Добавьте первые подарки из Wildberries или Ozon, чтобы друзья знали, что подарить!'
+                            : `${data.profile.firstName || 'Владелец'} пока не добавил ни одного желания.`}
+                        </p>
+                        {isEffectiveOwner && (
+                          <button
+                            onClick={handleOpenAddModal}
+                            className="mt-4 px-5 py-2.5 rounded-full bg-white text-black text-xs font-black inline-flex items-center gap-1.5 active:scale-95 hover:bg-zinc-200 transition-all shadow-md"
+                          >
+                            <Plus size={15} />
+                            Добавить первое желание
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
 
-            {/* VIEW 2: FRIENDS' WISHLISTS */}
-            {currentNavTab === 'friends' && (
+            {/* TAB 2: FRIENDS */}
+            <div
+              className={`w-full shrink-0 min-w-full transition-opacity duration-200 ${
+                currentNavTab === 'friends'
+                  ? 'opacity-100'
+                  : isDragging || isTransitioning
+                  ? 'opacity-70'
+                  : 'h-0 overflow-hidden opacity-0 pointer-events-none'
+              }`}
+            >
               <FriendsWishlistPage
                 currentUserId={data?.profile?.id}
                 onOpenFriendWishlist={(friendId) => {
                   setViewingFriendId(friendId)
-                  setCurrentNavTab('my')
+                  handleNavTabChange('my')
                 }}
                 onHaptic={() => haptics.impact('light')}
                 onShowToast={showToast}
               />
-            )}
+            </div>
 
-            {/* VIEW 3: SECRET SANTA (IN DEVELOPMENT) */}
-            {currentNavTab === 'santa' && (
-              <SecretSantaPage
-                onBackToWishlist={() => setCurrentNavTab('my')}
-                onHaptic={() => haptics.impact('light')}
-              />
-            )}
-
-            {/* VIEW 4: SETTINGS (Always renders current user's own profile!) */}
-            {currentNavTab === 'settings' && (myProfile || data?.profile) && (
-              <SettingsPage
-                profile={{
-                  ...(myProfile || data!.profile),
-                  isPremium: isUserPremium || Boolean(myProfile?.isPremium),
-                }}
-                isOwner={true}
-                currencyMode={currencyMode}
-                onSelectCurrency={handleSelectCurrency}
-                onSaveProfile={handleSaveProfile}
-                onHaptic={() => haptics.impact('light')}
-                onShowToast={showToast}
-                onOpenPremiumModal={() => {
-                  setPremiumReason('general')
-                  setIsPremiumModalOpen(true)
-                }}
-                onOpenAdminModal={() => setIsAdminModalOpen(true)}
-                onOpenCustomization={() => setIsCustomizationModalOpen(true)}
-              />
-            )}
-          </>
+            {/* TAB 3: SETTINGS */}
+            <div
+              className={`w-full shrink-0 min-w-full transition-opacity duration-200 ${
+                currentNavTab === 'settings'
+                  ? 'opacity-100'
+                  : isDragging || isTransitioning
+                  ? 'opacity-70'
+                  : 'h-0 overflow-hidden opacity-0 pointer-events-none'
+              }`}
+            >
+              {(myProfile || data?.profile) && (
+                <SettingsPage
+                  profile={{
+                    ...(myProfile || data!.profile),
+                    isPremium: isUserPremium || Boolean(myProfile?.isPremium),
+                  }}
+                  isOwner={true}
+                  currencyMode={currencyMode}
+                  onSelectCurrency={handleSelectCurrency}
+                  onSaveProfile={handleSaveProfile}
+                  onHaptic={() => haptics.impact('light')}
+                  onShowToast={showToast}
+                  onOpenPremiumModal={() => {
+                    setPremiumReason('general')
+                    setIsPremiumModalOpen(true)
+                  }}
+                  onOpenAdminModal={() => setIsAdminModalOpen(true)}
+                  onOpenCustomization={() => setIsCustomizationModalOpen(true)}
+                />
+              )}
+            </div>
+          </div>
         )}
       </main>
 

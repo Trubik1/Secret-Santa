@@ -55,9 +55,9 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
   }
 
   return (
-    <div className="w-full pt-1 pb-1 select-none">
+    <div className="w-full max-w-full pt-1 pb-1 select-none overflow-hidden">
       {/* Spacious Minimalist Hero Banner (Cover is 100% visible, not squashed!) */}
-      <div className="relative overflow-hidden bg-[#161618] rounded-3xl p-4 sm:p-5 border border-white/10 shadow-2xl min-h-[180px] sm:min-h-[220px] aspect-[2.3/1] sm:aspect-[2.8/1] flex flex-col justify-between">
+      <div className="relative overflow-hidden bg-[#161618] rounded-3xl p-4 sm:p-5 border border-white/10 shadow-2xl w-full max-w-full h-44 sm:h-52 flex flex-col justify-between box-border">
         {/* Custom Cover Photo Background */}
         {profile.coverUrl ? (
           <>
@@ -75,21 +75,21 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
         )}
 
         {/* Top Row: Navigation Context + Avatar & Actions */}
-        <div className="relative z-10 flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
+        <div className="relative z-10 flex items-start justify-between gap-2 w-full min-w-0">
+          <div className="flex-1 min-w-0 pr-1">
             {isOwner ? (
               /* Owner View: Clean, no duplicate name/PRO badge crowding your own cover! */
-              <div>
-                <span className="text-[11px] font-bold tracking-wider uppercase text-zinc-300 drop-shadow-sm">
+              <div className="min-w-0">
+                <span className="text-[11px] font-bold tracking-wider uppercase text-zinc-300 drop-shadow-sm block truncate">
                   Giftly • Мой вишлист
                 </span>
                 {profile.eventTitle && (
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <h1 className="text-base sm:text-lg font-black tracking-tight text-white drop-shadow">
+                  <div className="flex items-center gap-2 mt-1 min-w-0 flex-wrap">
+                    <h1 className="text-base sm:text-lg font-black tracking-tight text-white drop-shadow truncate max-w-full">
                       {profile.eventTitle}
                     </h1>
                     {countdownText && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/15 text-white border border-white/20 backdrop-blur-md shadow-sm">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/15 text-white border border-white/20 backdrop-blur-md shadow-sm shrink-0">
                         <Calendar size={10} />
                         <span>{countdownText}</span>
                       </span>
@@ -99,14 +99,14 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
               </div>
             ) : (
               /* Guest View: Clearly identifies the friend, with name and PRO status! */
-              <div>
+              <div className="min-w-0">
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-1">
                   <span>👀</span>
                   <span>Вишлист друга</span>
                 </span>
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <h1 className="text-base sm:text-lg font-black tracking-tight text-white truncate flex items-center gap-1.5 drop-shadow">
-                    <span>Вишлист: {profile.firstName || 'Друга'} {profile.lastName || ''}</span>
+                <div className="flex items-center gap-1.5 mt-0.5 min-w-0 flex-wrap">
+                  <h1 className="text-base sm:text-lg font-black tracking-tight text-white truncate max-w-full flex items-center gap-1.5 drop-shadow">
+                    <span className="truncate">Вишлист: {profile.firstName || 'Друга'} {profile.lastName || ''}</span>
                     {profile.isPremium && (
                       <TelegramStarIcon size={18} className="inline-block shrink-0 -mt-0.5" />
                     )}
@@ -118,15 +118,15 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-zinc-300 mt-1 font-medium drop-shadow-sm">
-                  Бронируйте подарки сюрпризом или скидывайтесь с друзьями 🤝
+                <p className="text-[11px] text-zinc-300 mt-1 font-medium drop-shadow-sm truncate">
+                  Бронируйте подарки сюрпризом или скидывайтесь 🤝
                 </p>
               </div>
             )}
           </div>
 
           {/* Top-Right: Share & Avatar / Customization Button */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 ml-1">
             <button
               onClick={() => {
                 onHaptic?.()

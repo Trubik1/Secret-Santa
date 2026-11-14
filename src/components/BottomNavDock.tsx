@@ -21,10 +21,23 @@ export const BottomNavDock: React.FC<BottomNavDockProps> = ({
     { id: 'settings', label: 'Настройки', icon: <Settings size={20} strokeWidth={2} /> },
   ]
 
+  const activeIndex = Math.max(0, tabs.findIndex((t) => t.id === activeTab))
+
   return (
     <div className="fixed bottom-5 left-1/2 -translate-x-1/2 w-[90%] max-w-[340px] z-40 select-none pointer-events-auto">
       {/* Liquid Glass Floating Dock with Apple HIG backdrop blur & frosted glow */}
       <div className="liquid-glass-dock liquid-glass-dock-dark relative rounded-full p-1.5 flex items-center justify-between">
+        {/* Floating Sliding Capsule Indicator (glides smoothly across tabs) */}
+        <div
+          className="absolute top-1.5 bottom-1.5 left-1.5 pointer-events-none transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]"
+          style={{
+            width: 'calc((100% - 12px) / 4)',
+            transform: `translateX(${activeIndex * 100}%)`,
+          }}
+        >
+          <div className="w-full h-full rounded-full glass-active-tab glass-active-tab-dark" />
+        </div>
+
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id
           return (
@@ -35,10 +48,10 @@ export const BottomNavDock: React.FC<BottomNavDockProps> = ({
                 onChangeTab(tab.id)
               }}
               title={tab.label}
-              className={`relative z-10 flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer rounded-full ${
+              className={`relative z-10 flex-1 flex items-center justify-center py-2.5 rounded-full transition-all duration-200 active:scale-90 cursor-pointer ${
                 isActive
-                  ? 'glass-active-tab glass-active-tab-dark px-5 py-2.5'
-                  : 'text-zinc-400 hover:text-zinc-200 px-3 py-2.5'
+                  ? 'text-white scale-105'
+                  : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
               <div className="flex items-center justify-center">
