@@ -1,7 +1,7 @@
 import React from 'react'
 import { Gift } from '../types'
 import { CurrencyMode, formatPrice } from '../utils/currency'
-import { Gift as GiftIcon, Check, Lock } from 'lucide-react'
+import { Gift as GiftIcon, Check, Lock, Pin } from 'lucide-react'
 
 interface GiftCardProps {
   gift: Gift
@@ -42,6 +42,14 @@ export const GiftCard: React.FC<GiftCardProps> = ({
     >
       {/* Large 1:1 Clean Image - No floating badges */}
       <div className="relative w-full aspect-square bg-zinc-900 overflow-hidden">
+        {/* Pinned Dream #1 Badge */}
+        {gift.isPinned && (
+          <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 text-black text-[9px] font-black flex items-center gap-1 shadow-md border border-amber-300/40">
+            <Pin size={10} className="fill-black rotate-45" />
+            <span>PIN</span>
+          </div>
+        )}
+
         {gift.imageUrl ? (
           <img
             src={gift.imageUrl}

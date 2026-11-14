@@ -33,6 +33,7 @@ export const gifts = table('gifts', {
   description: text('description'), // Creator notes & wishes
   categoryId: text('category_id').default('other'),
   priority: integer('priority').default(1), // 1 (хочу), 2 (очень хочу), 3 (мечта)
+  isPinned: boolean('is_pinned').default(false), // 1 = pinned to #1 place (PRO)
   isCrowdfund: boolean('is_crowdfund').default(false), // 1 = enabled crowdfunding
   targetAmount: integer('target_amount').default(0), // Target sum in RUB
   isBooked: boolean('is_booked').default(false), // 1 = booked by someone

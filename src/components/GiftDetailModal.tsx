@@ -1,18 +1,21 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Gift } from '../types'
 import { CurrencyMode, formatPrice } from '../utils/currency'
-import { ExternalLink, Edit3, Trash2, Gift as GiftIcon, Users, CheckCircle2, Lock } from 'lucide-react'
+import { ExternalLink, Edit3, Trash2, Gift as GiftIcon, Users, CheckCircle2, Lock, Pin } from 'lucide-react'
 
 interface GiftDetailModalProps {
   gift: Gift | null
   isOwner: boolean
   currencyMode: CurrencyMode
+  currentUserId?: number
   onClose: () => void
   onEdit: (gift: Gift) => void
   onDelete: (gift: Gift) => void
   onBook: (gift: Gift) => void
   onUnbook: (gift: Gift) => void
   onPledge: (gift: Gift) => void
+  onCancelPledge?: (giftId: string) => Promise<void>
+  onTogglePin?: (gift: Gift) => Promise<void>
   onOpenLink: (url: string) => void
   onHaptic?: () => void
 }
@@ -21,12 +24,15 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
   gift,
   isOwner,
   currencyMode,
+  currentUserId,
   onClose,
   onEdit,
   onDelete,
   onBook,
   onUnbook,
   onPledge,
+  onCancelPledge,
+  onTogglePin,
   onOpenLink,
   onHaptic,
 }) => {
@@ -85,6 +91,7 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
   const priceText = formatPrice(gift.price, currencyMode)
   const pledged = gift.totalPledged || 0
   const progressPercent = gift.price > 0 ? Math.min(100, Math.round((pledged / gift.price) * 100)) : 0
+  const myPledge = gift.pledges?.find((p) => p.isMe || (currentUserId && p.userId === currentUserId)) || (gift.myPledgedAmount ? { amount: gift.myPledgedAmount } : undefined)
 
   const priorityLabel =
     gift.priority === 3
@@ -227,36 +234,78 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
                 </div>
               </div>
             )}
+
+            {/* My contribution indicator + Cancel button */}
+            {myPledge && (
+              <div className="mt-3 p-2.5 rounded-xl bg-amber-400/10 border border-amber-400/25 flex items-center justify-between">
+                <div className="text-xs">
+                  <span className="text-zinc-400 font-medium">Ваш взнос: </span>
+                  <span className="font-extrabold text-white">{formatPrice(myPledge.amount, currencyMode)}</span>
+                </div>
+                {onCancelPledge && (
+                  <button
+                    onClick={async () => {
+                      onHaptic?.()
+                      handleDismiss()
+                      await onCancelPledge(gift.id)
+                    }}
+                    className="text-[11px] font-bold text-red-400 hover:text-red-300 transition-colors cursor-pointer"
+                  >
+                    Отменить мой взнос
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
         {/* ACTION BUTTONS */}
         <div className="mt-5 pt-3.5 border-t border-white/10">
           {isOwner ? (
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => {
-                  onHaptic?.()
-                  handleDismiss()
-                  onEdit(gift)
-                }}
-                className="py-3 px-4 rounded-xl bg-[#27272a] hover:bg-zinc-700 text-xs font-bold text-white border border-white/5 flex items-center justify-center gap-2 transition-all active:scale-95"
-              >
-                <Edit3 size={15} />
-                <span>Редактировать</span>
-              </button>
+            <div className="space-y-2.5">
+              {/* Pin / Unpin Button */}
+              {onTogglePin && (
+                <button
+                  onClick={() => {
+                    onHaptic?.()
+                    onTogglePin(gift)
+                  }}
+                  className={`w-full py-3 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all active:scale-95 border cursor-pointer ${
+                    gift.isPinned
+                      ? 'bg-amber-400/20 text-amber-300 border-amber-400/40 hover:bg-amber-400/30'
+                      : 'bg-[#27272a] hover:bg-zinc-700 text-white border-white/10'
+                  }`}
+                >
+                  <Pin size={15} className={gift.isPinned ? 'fill-amber-300 text-amber-300 rotate-45' : 'text-zinc-400'} />
+                  <span>{gift.isPinned ? 'Открепить с 1 места' : 'Закрепить на 1 месте (PRO)'}</span>
+                </button>
+              )}
 
-              <button
-                onClick={() => {
-                  onHaptic?.()
-                  handleDismiss()
-                  onDelete(gift)
-                }}
-                className="py-3 px-4 rounded-xl bg-red-950/30 hover:bg-red-900/40 border border-red-500/20 text-xs font-bold text-red-400 flex items-center justify-center gap-2 transition-all active:scale-95"
-              >
-                <Trash2 size={15} />
-                <span>Удалить</span>
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => {
+                    onHaptic?.()
+                    handleDismiss()
+                    onEdit(gift)
+                  }}
+                  className="py-3 px-4 rounded-xl bg-[#27272a] hover:bg-zinc-700 text-xs font-bold text-white border border-white/5 flex items-center justify-center gap-2 transition-all active:scale-95"
+                >
+                  <Edit3 size={15} />
+                  <span>Редактировать</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    onHaptic?.()
+                    handleDismiss()
+                    onDelete(gift)
+                  }}
+                  className="py-3 px-4 rounded-xl bg-red-950/30 hover:bg-red-900/40 border border-red-500/20 text-xs font-bold text-red-400 flex items-center justify-center gap-2 transition-all active:scale-95"
+                >
+                  <Trash2 size={15} />
+                  <span>Удалить</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="space-y-2.5">

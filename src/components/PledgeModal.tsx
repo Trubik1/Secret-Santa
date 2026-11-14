@@ -14,8 +14,10 @@ interface PledgeModalProps {
   isOpen: boolean
   gift: Gift | null
   currencyMode: CurrencyMode
+  currentUserId?: number
   onClose: () => void
   onConfirmPledge: (giftId: string, amountInRub: number) => Promise<void>
+  onCancelPledge?: (giftId: string) => Promise<void>
   onOpenTelegramLink?: (url: string) => void
   onHaptic: () => void
 }
@@ -24,8 +26,10 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
   isOpen,
   gift,
   currencyMode,
+  currentUserId,
   onClose,
   onConfirmPledge,
+  onCancelPledge,
   onOpenTelegramLink: _onOpenTelegramLink,
   onHaptic,
 }) => {
@@ -39,12 +43,15 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
   const currentTotalInRub = gift.totalPledged || 0
   const remainingInRub = Math.max(0, targetAmountInRub - currentTotalInRub)
   const progressPercent = targetAmountInRub > 0 ? Math.min(100, Math.round((currentTotalInRub / targetAmountInRub) * 100)) : 0
-  const remainingInCurr = Math.round(convertRubTo(remainingInRub, currencyMode))
+  const remainingInCurr = Math.max(1, Math.round(convertRubTo(remainingInRub, currencyMode)))
+
+  const myPledge = gift.pledges?.find((p) => p.isMe || (currentUserId && p.userId === currentUserId)) || (gift.myPledgedAmount ? { amount: gift.myPledgedAmount } : undefined)
 
   const handleQuickAdd = (addVal: number) => {
     onHaptic()
     const cur = parseFloat(amount) || 0
-    setAmount(String(cur + addVal))
+    const nextVal = Math.min(remainingInCurr, cur + addVal)
+    setAmount(String(nextVal))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,7 +62,8 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
     setIsSubmitting(true)
     onHaptic()
     try {
-      const numInRub = convertToRub(num, currencyMode)
+      const clampedNum = Math.min(remainingInCurr, num)
+      const numInRub = Math.min(remainingInRub, convertToRub(clampedNum, currencyMode))
       await onConfirmPledge(gift.id, numInRub)
       fireConfetti()
       onClose()
@@ -132,21 +140,54 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
           </div>
         </div>
 
+        {/* Existing User Contribution Card */}
+        {myPledge && (
+          <div className="mt-4 p-3 rounded-2xl bg-amber-400/10 border border-amber-400/25 flex items-center justify-between">
+            <div>
+              <div className="text-[10px] uppercase font-bold text-amber-300">Ваше участие в сборе</div>
+              <div className="text-xs font-black text-white mt-0.5">
+                Ваш текущий взнос: {formatPrice(myPledge.amount, currencyMode)}
+              </div>
+            </div>
+            {onCancelPledge && (
+              <button
+                type="button"
+                onClick={async () => {
+                  onHaptic()
+                  await onCancelPledge(gift.id)
+                  onClose()
+                }}
+                className="px-2.5 py-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/50 border border-red-500/30 text-xs font-bold text-red-400 transition-colors cursor-pointer"
+              >
+                Отменить взнос
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Pledge Form */}
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
             <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
-              Сколько вы готовы внести ({currSymbol})
+              Сколько вы готовы внести ({currSymbol}) • макс. {remainingInCurr} {currSymbol}
             </label>
             <div className="relative">
               <input
                 type="number"
                 step="any"
                 min="1"
+                max={remainingInCurr}
                 required
-                placeholder="Например, 50"
+                placeholder={`До ${remainingInCurr} ${currSymbol}`}
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value)
+                  if (!isNaN(val) && val > remainingInCurr) {
+                    setAmount(String(remainingInCurr))
+                  } else {
+                    setAmount(e.target.value)
+                  }
+                }}
                 className="w-full px-3.5 py-2.5 pr-10 rounded-xl bg-zinc-900 border border-white/10 text-xs font-bold text-white placeholder:text-zinc-500 focus:outline-none focus:border-white/30"
               />
               <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-zinc-400">
@@ -161,7 +202,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                   key={chip}
                   type="button"
                   onClick={() => handleQuickAdd(chip)}
-                  className="px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-[10px] font-bold text-zinc-300 border border-white/5 active:scale-95 transition-all"
+                  className="px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-[10px] font-bold text-zinc-300 border border-white/5 active:scale-95 transition-all cursor-pointer"
                 >
                   +{chip} {currSymbol}
                 </button>
@@ -169,8 +210,11 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
               {remainingInCurr > 0 && (
                 <button
                   type="button"
-                  onClick={() => setAmount(String(remainingInCurr))}
-                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] font-extrabold text-white border border-white/10 active:scale-95 transition-all ml-auto"
+                  onClick={() => {
+                    onHaptic()
+                    setAmount(String(remainingInCurr))
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] font-extrabold text-white border border-white/10 active:scale-95 transition-all ml-auto cursor-pointer"
                 >
                   Внести остаток ({remainingInCurr})
                 </button>

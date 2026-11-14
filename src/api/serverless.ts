@@ -201,6 +201,12 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
         priority: input.priority !== undefined ? input.priority : giftsList[index].priority,
         isCrowdfund: input.isCrowdfund !== undefined ? Boolean(input.isCrowdfund) : giftsList[index].isCrowdfund,
         targetAmount: input.targetAmount !== undefined ? parseInt(input.targetAmount, 10) : giftsList[index].targetAmount,
+        isPinned: input.isPinned !== undefined ? Boolean(input.isPinned) : giftsList[index].isPinned,
+      }
+      if (input.isPinned) {
+        giftsList.forEach((g, idx) => {
+          if (idx !== index) g.isPinned = false
+        })
       }
       saveMockGifts(giftsList)
       return { success: true } as unknown as T
@@ -258,23 +264,42 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
       const gift = giftsList.find((g) => g.id === input.giftId)
       if (!gift) throw new Error('Подарок не найден')
 
+      if (input.cancel) {
+        const pledges = (gift.pledges || []).filter((p) => !p.isMe)
+        gift.pledges = pledges
+        gift.pledgesCount = pledges.length
+        gift.totalPledged = pledges.reduce((sum, p) => sum + p.amount, 0)
+        gift.myPledgedAmount = 0
+        const target = gift.targetAmount > 0 ? gift.targetAmount : gift.price
+        if (target > 0 && gift.totalPledged < target) {
+          gift.isBooked = false
+        }
+        saveMockGifts(giftsList)
+        return { success: true, cancelled: true, totalPledged: gift.totalPledged, pledges: gift.pledges } as unknown as T
+      }
+
       const amount = parseInt(input.amount, 10) || 0
       if (amount <= 0) throw new Error('Некорректная сумма')
 
-      gift.isCrowdfund = true
-      gift.targetAmount = gift.price || amount
-
       const pledges = gift.pledges || []
+      const otherTotal = pledges.filter((p) => !p.isMe).reduce((sum, p) => sum + p.amount, 0)
+      const target = gift.targetAmount > 0 ? gift.targetAmount : gift.price
+      const remainingNeeded = Math.max(0, target - otherTotal)
+      const clampedAmount = Math.min(amount, remainingNeeded)
+
+      gift.isCrowdfund = true
+      gift.targetAmount = target
+
       const existing = pledges.find((p) => p.isMe)
 
       if (existing) {
-        existing.amount = amount
+        existing.amount = clampedAmount
       } else {
         const newPledge: GiftPledge = {
           id: 'p-' + Date.now(),
           userName: 'Вы (Гость)',
           userUsername: 'friend_guest',
-          amount,
+          amount: clampedAmount,
           createdAt: new Date().toISOString(),
           isMe: true,
         }
@@ -284,9 +309,8 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
       gift.pledges = pledges
       gift.pledgesCount = pledges.length
       gift.totalPledged = pledges.reduce((sum, p) => sum + p.amount, 0)
-      gift.myPledgedAmount = amount
+      gift.myPledgedAmount = clampedAmount
 
-      const target = gift.targetAmount > 0 ? gift.targetAmount : gift.price
       if (target > 0 && gift.totalPledged >= target) {
         gift.isBooked = true
       }

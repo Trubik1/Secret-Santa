@@ -1,7 +1,7 @@
 import React from 'react'
 import { Gift } from '../types'
 import { CurrencyMode, formatPrice } from '../utils/currency'
-import { Users, Sparkles, CheckCircle2 } from 'lucide-react'
+import { Users, Sparkles, CheckCircle2, Pin } from 'lucide-react'
 
 interface GroupCollectionCardProps {
   gift: Gift
@@ -40,7 +40,13 @@ export const GroupCollectionCard: React.FC<GroupCollectionCardProps> = ({
 
       {/* Top Badge & Header */}
       <div className="relative z-10 flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {gift.isPinned && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-400 text-black shadow-md border border-amber-300">
+              <Pin size={11} className="fill-black rotate-45" />
+              <span>PIN</span>
+            </span>
+          )}
           {isGoalReached ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-sm">
               <CheckCircle2 size={13} />

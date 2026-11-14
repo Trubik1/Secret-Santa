@@ -33,10 +33,18 @@ export default async function (input, ctx) {
     ? (input.targetAmount !== undefined ? Math.max(0, parseInt(input.targetAmount, 10) || 0) : existing.targetAmount)
     : 0
   const priority = input.priority !== undefined ? parseInt(input.priority, 10) : existing.priority
+  const isPinned = input.isPinned !== undefined ? Boolean(input.isPinned) : Boolean(existing.isPinned)
   const categoryId = input.categoryId !== undefined ? input.categoryId.trim() : existing.categoryId
   const url = input.url !== undefined ? input.url.trim() : existing.url
   const imageUrl = input.imageUrl !== undefined ? input.imageUrl.trim() : existing.imageUrl
   const description = input.description !== undefined ? (input.description?.trim() || null) : existing.description
+
+  // If pinning this gift, unpin other gifts for this user
+  if (isPinned && !existing.isPinned) {
+    try {
+      await db.update(gifts).set({ isPinned: false }).where(eq(gifts.userId, caller.id)).run()
+    } catch (_) {}
+  }
 
   await db.update(gifts).set({
     title,
@@ -44,6 +52,7 @@ export default async function (input, ctx) {
     isCrowdfund,
     targetAmount,
     priority,
+    isPinned,
     categoryId,
     url,
     imageUrl,

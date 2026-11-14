@@ -291,16 +291,22 @@ export function App() {
   }, [loadWishlist])
 
   // Gifts feed:
-  // For friends (!isEffectiveOwner): gifts with active/completed group collection (totalPledged > 0) are pinned to the VERY TOP (#1 place)!
-  // For owner (isEffectiveOwner): surprise mode, sorted cleanly by priority (Мечта -> Очень хочу -> Хочу).
+  // 1. PINNED gift is always #1 (both for owner and guest!)
+  // 2. For friends (!isEffectiveOwner): gifts with active/completed group collection (totalPledged > 0) come next
+  // 3. Sorted by priority (Мечта -> Очень хочу -> Хочу).
   const giftsFeed = useMemo(() => {
     if (!data?.gifts) return []
     return [...data.gifts].sort((a, b) => {
+      const aPinned = a.isPinned ? 1 : 0
+      const bPinned = b.isPinned ? 1 : 0
+      if (aPinned !== bPinned) {
+        return bPinned - aPinned // Pinned gift is strictly #1
+      }
       if (!isEffectiveOwner) {
         const aHasPledge = (a.totalPledged || 0) > 0 ? 1 : 0
         const bHasPledge = (b.totalPledged || 0) > 0 ? 1 : 0
         if (aHasPledge !== bHasPledge) {
-          return bHasPledge - aHasPledge // Pledged/group gift is strictly first!
+          return bHasPledge - aHasPledge // Pledged/group gift is next
         }
       }
       return (b.priority || 1) - (a.priority || 1)
@@ -401,6 +407,43 @@ export function App() {
     fireConfetti()
     showToast(`Вы внесли вклад! Спасибо 🤝`)
     await loadWishlist()
+  }
+
+  const handleTogglePin = async (gift: Gift) => {
+    if (!isUserPremium && !gift.isPinned) {
+      haptics.notification('warning')
+      setPremiumReason('general')
+      setIsPremiumModalOpen(true)
+      return
+    }
+    haptics.impact('medium')
+    try {
+      const nextPinned = !gift.isPinned
+      await serverlessCall('updateGift', { id: gift.id, isPinned: nextPinned })
+      haptics.notification('success')
+      showToast(nextPinned ? 'Подарок закреплён на первом месте 📌' : 'Подарок откреплён')
+      await loadWishlist()
+      if (selectedGiftDetail && selectedGiftDetail.id === gift.id) {
+        setSelectedGiftDetail({ ...selectedGiftDetail, isPinned: nextPinned })
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Ошибка закрепления подарка')
+    }
+  }
+
+  const handleCancelPledge = async (giftId: string) => {
+    if (!window.confirm('Отменить ваш взнос в этот подарок?')) return
+    haptics.impact('medium')
+    try {
+      await serverlessCall('pledgeGift', { giftId, cancel: true })
+      haptics.notification('success')
+      showToast('Ваш взнос успешно отменён')
+      await loadWishlist()
+      setPledgingGift(null)
+      setSelectedGiftDetail(null)
+    } catch (err: any) {
+      showToast(err.message || 'Ошибка отмены взноса')
+    }
   }
 
   const handleParseUrl = async (targetUrl: string) => {
@@ -654,12 +697,15 @@ export function App() {
         gift={selectedGiftDetail}
         isOwner={isEffectiveOwner}
         currencyMode={currencyMode}
+        currentUserId={user?.id}
         onClose={() => setSelectedGiftDetail(null)}
         onEdit={handleEditGift}
         onDelete={handleRequestDeleteGift}
         onBook={handleBookGift}
         onUnbook={handleUnbookGift}
         onPledge={handleOpenPledge}
+        onCancelPledge={handleCancelPledge}
+        onTogglePin={handleTogglePin}
         onOpenLink={openLink}
         onHaptic={() => haptics.impact('light')}
       />
@@ -683,8 +729,10 @@ export function App() {
         isOpen={Boolean(pledgingGift)}
         gift={pledgingGift}
         currencyMode={currencyMode}
+        currentUserId={user?.id}
         onClose={() => setPledgingGift(null)}
         onConfirmPledge={handleConfirmPledge}
+        onCancelPledge={handleCancelPledge}
         onOpenTelegramLink={openTelegramLink}
         onHaptic={() => haptics.impact('light')}
       />

@@ -10,14 +10,11 @@ export default async function (input, ctx) {
   }
 
   const giftId = input?.giftId
+  const isCancel = Boolean(input?.cancel)
   const pledgeAmount = parseInt(input?.amount, 10)
 
   if (!giftId) {
     throw new EndpointError('ID подарка не указан', { code: 'MISSING_ID' })
-  }
-
-  if (isNaN(pledgeAmount) || pledgeAmount <= 0) {
-    throw new EndpointError('Сумма взноса должна быть больше нуля', { code: 'INVALID_AMOUNT' })
   }
 
   const gift = await db.select().from(gifts).where(eq(gifts.id, giftId)).get()
@@ -29,8 +26,42 @@ export default async function (input, ctx) {
     throw new EndpointError('Вы не можете скидываться на собственный подарок', { code: 'CANNOT_PLEDGE_OWN' })
   }
 
-  // Any friend can propose / initiate a group collection on any gift
   const targetPrice = gift.price > 0 ? gift.price : (gift.targetAmount || pledgeAmount)
+
+  // Fetch existing pledges for this gift
+  const existingPledges = await db.select().from(giftPledges).where(eq(giftPledges.giftId, giftId)).all()
+  const myExistingPledge = existingPledges.find(p => p.userId === caller.id)
+
+  // Handle Cancellation of pledge
+  if (isCancel) {
+    if (myExistingPledge) {
+      await db.delete(giftPledges).where(eq(giftPledges.id, myExistingPledge.id)).run()
+    }
+    const remainingPledges = await db.select().from(giftPledges).where(eq(giftPledges.giftId, giftId)).all()
+    const newTotal = remainingPledges.reduce((sum, p) => sum + (p.amount || 0), 0)
+
+    // If goal was reached previously but now dropped below target, unbook it
+    if (newTotal < targetPrice && gift.isBooked && gift.bookedByUserId === caller.id) {
+      await db.update(gifts).set({
+        isBooked: false,
+        bookedByUserId: null,
+        bookedAt: null,
+      }).where(eq(gifts.id, giftId)).run()
+    }
+
+    return {
+      success: true,
+      cancelled: true,
+      totalPledged: newTotal,
+      pledges: remainingPledges,
+    }
+  }
+
+  if (isNaN(pledgeAmount) || pledgeAmount <= 0) {
+    throw new EndpointError('Сумма взноса должна быть больше нуля', { code: 'INVALID_AMOUNT' })
+  }
+
+  // Any friend can propose / initiate a group collection on any gift
   if (!gift.isCrowdfund) {
     await db.update(gifts).set({
       isCrowdfund: true,
@@ -40,17 +71,24 @@ export default async function (input, ctx) {
     gift.targetAmount = targetPrice
   }
 
+  const otherPledges = existingPledges.filter(p => p.userId !== caller.id)
+  const otherTotal = otherPledges.reduce((sum, p) => sum + (p.amount || 0), 0)
+  const remainingNeeded = Math.max(0, targetPrice - otherTotal)
+
+  if (remainingNeeded <= 0) {
+    throw new EndpointError('Сбор на этот подарок уже собран на 100%!', { code: 'GOAL_ALREADY_REACHED' })
+  }
+
+  // Cap pledge amount strictly to the remaining amount
+  const effectivePledge = Math.min(pledgeAmount, remainingNeeded)
+
   const callerName = [caller.first_name, caller.last_name].filter(Boolean).join(' ') || 'Друг'
   const callerUsername = caller.username || null
-
-  // Fetch existing pledges for this gift
-  const existingPledges = await db.select().from(giftPledges).where(eq(giftPledges.giftId, giftId)).all()
-  const myExistingPledge = existingPledges.find(p => p.userId === caller.id)
 
   if (myExistingPledge) {
     // Update existing pledge amount
     await db.update(giftPledges).set({
-      amount: pledgeAmount,
+      amount: effectivePledge,
       userName: callerName,
       userUsername: callerUsername,
     }).where(eq(giftPledges.id, myExistingPledge.id)).run()
@@ -62,7 +100,7 @@ export default async function (input, ctx) {
       userId: caller.id,
       userName: callerName,
       userUsername: callerUsername,
-      amount: pledgeAmount,
+      amount: effectivePledge,
     }).run()
   }
 

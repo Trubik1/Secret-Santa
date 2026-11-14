@@ -22,6 +22,7 @@ export interface UserProfile {
 
 export interface GiftPledge {
   id: string
+  userId?: number
   userName: string
   userUsername?: string | null
   amount: number
@@ -40,6 +41,7 @@ export interface Gift {
   imageUrl?: string | null
   categoryId: string
   priority: Priority
+  isPinned?: boolean
   isCrowdfund: boolean
   targetAmount: number
   createdAt?: string

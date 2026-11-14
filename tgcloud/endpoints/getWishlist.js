@@ -121,6 +121,7 @@ export default async function (input, ctx) {
         description: g.description || null,
         categoryId: g.categoryId,
         priority: g.priority,
+        isPinned: Boolean(g.isPinned),
         isCrowdfund: Boolean(g.isCrowdfund),
         targetAmount: g.targetAmount,
         createdAt: g.createdAt,
@@ -148,6 +149,7 @@ export default async function (input, ctx) {
         description: g.description || null,
         categoryId: g.categoryId,
         priority: g.priority,
+        isPinned: Boolean(g.isPinned),
         isCrowdfund: Boolean(g.isCrowdfund),
         targetAmount: g.targetAmount,
         createdAt: g.createdAt,
@@ -160,6 +162,7 @@ export default async function (input, ctx) {
         myPledgedAmount: myPledge ? myPledge.amount : 0,
         pledges: giftPledgesList.map(p => ({
           id: p.id,
+          userId: p.userId,
           userName: p.userName,
           userUsername: p.userUsername,
           amount: p.amount,
