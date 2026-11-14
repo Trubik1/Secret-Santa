@@ -9,9 +9,8 @@ export default async function (message, ctx) {
 
   if (!chatId || !fromUser) return
 
-  const botMe = await api.getMe()
-  const botId = botMe.id
-  const botUsername = botMe.username || 'giftly_me_bot'
+  const botId = 9186420547
+  const botUsername = 'giftly_me_bot'
   const appBaseUrl = `https://app${botId}.tgcloud.ai/`
 
   // Register or update user in DB
