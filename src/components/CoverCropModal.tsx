@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { X, Upload, Check, Loader2, Sparkles, RefreshCw } from 'lucide-react'
+import { X, Upload, Check, Loader2, Sparkles, RefreshCw, ZoomIn, ZoomOut } from 'lucide-react'
 
 interface CoverCropModalProps {
   isOpen: boolean
@@ -16,93 +16,92 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
 }) => {
   const [imageSrc, setImageSrc] = useState<string | null>(null)
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null)
-  const [displayedSize, setDisplayedSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
-  const [framePos, setFramePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
-  const [isDragging, setIsDragging] = useState(false)
+  const [scale, setScale] = useState<number>(1)
+  const [minScale, setMinScale] = useState<number>(1)
+  const [maxScale, setMaxScale] = useState<number>(4)
+  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [isSaving, setIsSaving] = useState(false)
+  const [frameSize, setFrameSize] = useState<{ width: number; height: number }>({ width: 320, height: 128 })
 
-  const dragStartRef = useRef<{ pointerX: number; pointerY: number; frameX: number; frameY: number }>({
-    pointerX: 0,
-    pointerY: 0,
-    frameX: 0,
-    frameY: 0,
-  })
+  // Touch & Pointer gesture tracking
+  const viewportRef = useRef<HTMLDivElement | null>(null)
+  const frameRef = useRef<HTMLDivElement | null>(null)
   const imgRef = useRef<HTMLImageElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const wrapperRef = useRef<HTMLDivElement | null>(null)
 
-  // Reset when opening
+  const isDraggingRef = useRef(false)
+  const dragStartRef = useRef<{ clientX: number; clientY: number; panX: number; panY: number }>({
+    clientX: 0,
+    clientY: 0,
+    panX: 0,
+    panY: 0,
+  })
+
+  // Pinch-to-zoom tracking
+  const pinchStartRef = useRef<{ dist: number; scale: number } | null>(null)
+
+  // Reset when opened
   useEffect(() => {
     if (isOpen) {
       setIsSaving(false)
-      setIsDragging(false)
     }
   }, [isOpen])
 
-  // Measure displayed image on mount / resize / image change
-  const updateDisplayedSize = useCallback(() => {
-    if (imgRef.current) {
-      const rect = imgRef.current.getBoundingClientRect()
+  // Measure crop frame size inside the viewport
+  const updateFrameDimensions = useCallback(() => {
+    if (frameRef.current) {
+      const rect = frameRef.current.getBoundingClientRect()
       if (rect.width > 0 && rect.height > 0) {
-        setDisplayedSize({ width: rect.width, height: rect.height })
+        setFrameSize({ width: rect.width, height: rect.height })
       }
     }
   }, [])
 
   useEffect(() => {
-    if (!imageSrc || !isOpen) return
-    window.addEventListener('resize', updateDisplayedSize)
-    return () => window.removeEventListener('resize', updateDisplayedSize)
-  }, [imageSrc, isOpen, updateDisplayedSize])
+    if (!isOpen) return
+    window.addEventListener('resize', updateFrameDimensions)
+    return () => window.removeEventListener('resize', updateFrameDimensions)
+  }, [isOpen, updateFrameDimensions])
 
-  // Calculate crop frame dimensions (exact 2.5 : 1 banner ratio)
-  const targetAspect = 2.5
-  const photoAspect =
-    displayedSize.width > 0 && displayedSize.height > 0
-      ? displayedSize.width / displayedSize.height
-      : targetAspect
+  // Clamp pan so image never leaves the frame
+  const clampPan = useCallback((x: number, y: number, currentScale: number, currentFrameW: number, currentFrameH: number) => {
+    if (!naturalSize) return { x: 0, y: 0 }
+    const renderedW = naturalSize.width * currentScale
+    const renderedH = naturalSize.height * currentScale
+    const maxPanX = Math.max(0, (renderedW - currentFrameW) / 2)
+    const maxPanY = Math.max(0, (renderedH - currentFrameH) / 2)
+    return {
+      x: Math.max(-maxPanX, Math.min(maxPanX, x)),
+      y: Math.max(-maxPanY, Math.min(maxPanY, y)),
+    }
+  }, [naturalSize])
 
-  let frameW = displayedSize.width
-  let frameH = displayedSize.height
-
-  if (photoAspect <= targetAspect) {
-    // Photo is taller than 2.5:1 -> frame takes full photo width
-    frameW = displayedSize.width
-    frameH = displayedSize.width / targetAspect
-  } else {
-    // Photo is wider than 2.5:1 -> frame takes full photo height
-    frameH = displayedSize.height
-    frameW = displayedSize.height * targetAspect
-  }
-
-  const maxFrameX = Math.max(0, displayedSize.width - frameW)
-  const maxFrameY = Math.max(0, displayedSize.height - frameH)
-
-  // Initialize frame in center once image dimensions are known
+  // When image loads, compute initial minScale so image covers the frame
   const handleImageLoaded = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget
     const nw = img.naturalWidth
     const nh = img.naturalHeight
     setNaturalSize({ width: nw, height: nh })
 
-    const dw = img.clientWidth
-    const dh = img.clientHeight
-    setDisplayedSize({ width: dw, height: dh })
-
-    const aspect = dw / dh
-    let fw = dw
-    let fh = dh
-    if (aspect <= targetAspect) {
-      fw = dw
-      fh = dw / targetAspect
-    } else {
-      fh = dh
-      fw = dh * targetAspect
+    // Measure frame
+    let fw = 320
+    let fh = 128
+    if (frameRef.current) {
+      const rect = frameRef.current.getBoundingClientRect()
+      if (rect.width > 0) {
+        fw = rect.width
+        fh = rect.height
+        setFrameSize({ width: fw, height: fh })
+      }
     }
 
-    const initX = Math.max(0, (dw - fw) / 2)
-    const initY = Math.max(0, (dh - fh) / 2)
-    setFramePos({ x: initX, y: initY })
+    // minScale ensures image ALWAYS fills frame width & height without black gaps
+    const calculatedMinScale = Math.max(fw / nw, fh / nh)
+    const calculatedMaxScale = calculatedMinScale * 4
+    setMinScale(calculatedMinScale)
+    setMaxScale(calculatedMaxScale)
+    setScale(calculatedMinScale)
+    setPan({ x: 0, y: 0 })
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,15 +118,25 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
     reader.readAsDataURL(file)
   }
 
-  // Pointer drag to move frame over photo
+  // Mouse wheel zoom (PC / Laptop)
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92
+    const nextScale = Math.max(minScale, Math.min(maxScale, scale * zoomFactor))
+    setScale(nextScale)
+    setPan((prev) => clampPan(prev.x, prev.y, nextScale, frameSize.width, frameSize.height))
+  }
+
+  // Pointer / Touch Handlers for Drag and Pinch-to-zoom
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (!imageSrc || displayedSize.width === 0) return
-    setIsDragging(true)
+    if (!imageSrc || !naturalSize) return
+    isDraggingRef.current = true
     dragStartRef.current = {
-      pointerX: e.clientX,
-      pointerY: e.clientY,
-      frameX: framePos.x,
-      frameY: framePos.y,
+      clientX: e.clientX,
+      clientY: e.clientY,
+      panX: pan.x,
+      panY: pan.y,
     }
     try {
       ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
@@ -135,46 +144,82 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
   }
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return
-    const deltaX = e.clientX - dragStartRef.current.pointerX
-    const deltaY = e.clientY - dragStartRef.current.pointerY
-
-    const nextX = Math.min(maxFrameX, Math.max(0, dragStartRef.current.frameX + deltaX))
-    const nextY = Math.min(maxFrameY, Math.max(0, dragStartRef.current.frameY + deltaY))
-
-    setFramePos({ x: nextX, y: nextY })
+    if (!isDraggingRef.current || pinchStartRef.current) return
+    const deltaX = e.clientX - dragStartRef.current.clientX
+    const deltaY = e.clientY - dragStartRef.current.clientY
+    const targetX = dragStartRef.current.panX + deltaX
+    const targetY = dragStartRef.current.panY + deltaY
+    const clamped = clampPan(targetX, targetY, scale, frameSize.width, frameSize.height)
+    setPan(clamped)
   }
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    setIsDragging(false)
+    isDraggingRef.current = false
     try {
       ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
     } catch (_) {}
   }
 
-  // High-Resolution Retina Crop (1200 x 480 at quality 0.92)
+  // Multi-touch Pinch to Zoom on mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const t1 = e.touches[0]
+      const t2 = e.touches[1]
+      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY)
+      pinchStartRef.current = { dist, scale }
+    }
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchStartRef.current) {
+      const t1 = e.touches[0]
+      const t2 = e.touches[1]
+      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY)
+      const ratio = dist / pinchStartRef.current.dist
+      const nextScale = Math.max(minScale, Math.min(maxScale, pinchStartRef.current.scale * ratio))
+      setScale(nextScale)
+      setPan((prev) => clampPan(prev.x, prev.y, nextScale, frameSize.width, frameSize.height))
+    }
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) {
+      pinchStartRef.current = null
+    }
+  }
+
+  // Zoom Slider Handlers
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nextScale = parseFloat(e.target.value)
+    setScale(nextScale)
+    setPan((prev) => clampPan(prev.x, prev.y, nextScale, frameSize.width, frameSize.height))
+  }
+
+  // High-Resolution Retina Crop (1200 x 480 at 2.5 : 1 ratio)
   const handleSave = useCallback(async () => {
-    if (!imgRef.current || !naturalSize || displayedSize.width === 0 || isSaving) return
+    if (!imgRef.current || !naturalSize || isSaving) return
 
     setIsSaving(true)
     onHaptic?.()
 
     try {
       const img = imgRef.current
-      const Wn = naturalSize.width
-      const Hn = naturalSize.height
-      const Wd = displayedSize.width
+      const nw = naturalSize.width
+      const nh = naturalSize.height
+      const fw = frameSize.width
+      const fh = frameSize.height
 
-      // Scale factor from displayed photo pixels to natural image pixels
-      const S = Wn / Wd
+      // Natural coordinate mapping
+      const naturalCenterX = nw / 2 - pan.x / scale
+      const naturalCenterY = nh / 2 - pan.y / scale
+      const cw = fw / scale
+      const ch = fh / scale
 
-      // Natural crop coordinates
-      const sx = Math.max(0, Math.min(Wn - 1, framePos.x * S))
-      const sy = Math.max(0, Math.min(Hn - 1, framePos.y * S))
-      const sw = Math.min(Wn - sx, frameW * S)
-      const sh = Math.min(Hn - sy, frameH * S)
+      const sx = Math.max(0, Math.min(nw - cw, naturalCenterX - cw / 2))
+      const sy = Math.max(0, Math.min(nh - ch, naturalCenterY - ch / 2))
+      const sw = Math.min(nw - sx, cw)
+      const sh = Math.min(nh - sy, ch)
 
-      // Target high-definition retina banner resolution (2.5 : 1 ratio)
       const targetWidth = 1200
       const targetHeight = 480
 
@@ -188,7 +233,6 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
       ctx.imageSmoothingQuality = 'high'
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight)
 
-      // High-quality crisp WebP (0.92), fallback to JPEG
       let outputDataUrl = canvas.toDataURL('image/webp', 0.92)
       if (!outputDataUrl.startsWith('data:image/webp')) {
         outputDataUrl = canvas.toDataURL('image/jpeg', 0.92)
@@ -202,7 +246,7 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
     } finally {
       setIsSaving(false)
     }
-  }, [naturalSize, displayedSize, framePos, frameW, frameH, isSaving, onHaptic, onSaveCover, onClose])
+  }, [naturalSize, frameSize, pan, scale, isSaving, onHaptic, onSaveCover, onClose])
 
   if (!isOpen) return null
 
@@ -212,7 +256,7 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
         className="w-full max-w-md bg-[#161618] rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-white/10 max-h-[92vh] overflow-y-auto animate-apple-spring"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header (Clean, no "Giftly Premium" text!) */}
+        {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center gap-2">
             <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
@@ -261,122 +305,134 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
             </button>
           </div>
         ) : (
-          <div className="mt-4 space-y-4">
-            {/* Full Photo Box with Highlighted Crop Viewfinder */}
-            <div className="relative flex flex-col items-center">
+          <div className="mt-4 space-y-3.5">
+            {/* Viewport Box (Fixed in center, image moves behind fixed frame) */}
+            <div
+              ref={viewportRef}
+              onWheel={handleWheel}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              className="relative w-full h-[280px] sm:h-[300px] rounded-2xl bg-black border border-white/10 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing touch-none select-none"
+            >
+              {/* Scalable & Pannable Image */}
+              <img
+                ref={imgRef}
+                src={imageSrc}
+                alt="Source preview"
+                draggable={false}
+                onLoad={handleImageLoaded}
+                className="absolute max-w-none pointer-events-none transition-none"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  transform: `translate(calc(-50% + ${pan.x}px), calc(-50% + ${pan.y}px)) scale(${scale})`,
+                  transformOrigin: 'center center',
+                }}
+              />
+
+              {/* Fixed 2.5:1 Crop Frame with 9999px Dark Overlay Outside */}
               <div
-                ref={wrapperRef}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerCancel={handlePointerUp}
-                className="relative overflow-hidden rounded-2xl bg-[#0d0d0f] border border-white/10 flex items-center justify-center max-h-[380px] w-full cursor-grab active:cursor-grabbing touch-none select-none"
+                ref={frameRef}
+                className="relative w-[90%] max-w-[360px] aspect-[2.5/1] rounded-2xl border-2 border-white pointer-events-none z-10 flex flex-col justify-between p-1.5 shadow-[0_0_0_9999px_rgba(0,0,0,0.72)]"
               >
-                {/* Full, uncropped image completely visible */}
-                <img
-                  ref={imgRef}
-                  src={imageSrc}
-                  alt="Crop preview"
-                  draggable={false}
-                  onLoad={handleImageLoaded}
-                  className="max-w-full max-h-[360px] object-contain block pointer-events-none select-none"
-                />
+                {/* Subtle Rule-of-Thirds Grid */}
+                <div className="absolute inset-0 flex flex-col justify-evenly pointer-events-none">
+                  <div className="w-full border-t border-white/20" />
+                  <div className="w-full border-t border-white/20" />
+                </div>
+                <div className="absolute inset-0 flex justify-evenly pointer-events-none">
+                  <div className="h-full border-l border-white/20" />
+                  <div className="h-full border-l border-white/20" />
+                </div>
 
-                {displayedSize.width > 0 && (
-                  <>
-                    {/* Darkened overlay outside the frame (TOP) */}
-                    <div
-                      style={{ top: 0, left: 0, right: 0, height: `${framePos.y}px` }}
-                      className="absolute bg-black/65 backdrop-blur-[0.5px] pointer-events-none transition-none"
-                    />
-
-                    {/* Darkened overlay outside the frame (BOTTOM) */}
-                    <div
-                      style={{
-                        top: `${framePos.y + frameH}px`,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                      }}
-                      className="absolute bg-black/65 backdrop-blur-[0.5px] pointer-events-none transition-none"
-                    />
-
-                    {/* Darkened overlay outside the frame (LEFT) */}
-                    {maxFrameX > 0 && (
-                      <div
-                        style={{
-                          top: `${framePos.y}px`,
-                          left: 0,
-                          width: `${framePos.x}px`,
-                          height: `${frameH}px`,
-                        }}
-                        className="absolute bg-black/65 backdrop-blur-[0.5px] pointer-events-none transition-none"
-                      />
-                    )}
-
-                    {/* Darkened overlay outside the frame (RIGHT) */}
-                    {maxFrameX > 0 && (
-                      <div
-                        style={{
-                          top: `${framePos.y}px`,
-                          left: `${framePos.x + frameW}px`,
-                          right: 0,
-                          height: `${frameH}px`,
-                        }}
-                        className="absolute bg-black/65 backdrop-blur-[0.5px] pointer-events-none transition-none"
-                      />
-                    )}
-
-                    {/* Clear, bright 2.5:1 Crop Frame */}
-                    <div
-                      style={{
-                        left: `${framePos.x}px`,
-                        top: `${framePos.y}px`,
-                        width: `${frameW}px`,
-                        height: `${frameH}px`,
-                      }}
-                      className="absolute border-2 border-white rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.6)] pointer-events-none flex flex-col justify-between p-1.5 transition-none"
-                    >
-                      {/* Subtle Viewfinder Rule-of-Thirds Grid */}
-                      <div className="absolute inset-0 flex flex-col justify-evenly pointer-events-none">
-                        <div className="w-full border-t border-white/20" />
-                        <div className="w-full border-t border-white/20" />
-                      </div>
-                      <div className="absolute inset-0 flex justify-evenly pointer-events-none">
-                        <div className="h-full border-l border-white/20" />
-                        <div className="h-full border-l border-white/20" />
-                      </div>
-
-                      {/* Corner Viewfinder Marks */}
-                      <div className="flex justify-between w-full relative z-10">
-                        <div className="w-2.5 h-2.5 border-t-2 border-l-2 border-white" />
-                        <div className="w-2.5 h-2.5 border-t-2 border-r-2 border-white" />
-                      </div>
-                      <div className="flex justify-between w-full relative z-10">
-                        <div className="w-2.5 h-2.5 border-b-2 border-l-2 border-white" />
-                        <div className="w-2.5 h-2.5 border-b-2 border-r-2 border-white" />
-                      </div>
-                    </div>
-                  </>
-                )}
+                {/* Corner Marks */}
+                <div className="flex justify-between w-full relative z-10">
+                  <div className="w-2.5 h-2.5 border-t-2 border-l-2 border-white" />
+                  <div className="w-2.5 h-2.5 border-t-2 border-r-2 border-white" />
+                </div>
+                <div className="flex justify-between w-full relative z-10">
+                  <div className="w-2.5 h-2.5 border-b-2 border-l-2 border-white" />
+                  <div className="w-2.5 h-2.5 border-b-2 border-r-2 border-white" />
+                </div>
               </div>
 
-              {/* Quick Change Button */}
+              {/* Top-left Quick Change button */}
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation()
                   onHaptic?.()
                   fileInputRef.current?.click()
                 }}
-                className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md text-[10px] font-bold text-zinc-200 border border-white/10 flex items-center gap-1 active:scale-95 cursor-pointer shadow-md z-20"
+                className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-black/80 backdrop-blur-md text-[10px] font-bold text-zinc-200 border border-white/15 flex items-center gap-1 active:scale-95 cursor-pointer shadow-md z-20"
               >
                 <RefreshCw size={10} />
                 <span>Другое фото</span>
               </button>
             </div>
 
+            {/* Intuitive Zoom Slider & Controls */}
+            <div className="p-3 rounded-2xl bg-zinc-900 border border-white/5 space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400">
+                <span className="flex items-center gap-1">
+                  <span>Масштаб</span>
+                  <span className="text-[10px] text-zinc-500 font-normal">
+                    (зум 2 пальцами или колёсиком)
+                  </span>
+                </span>
+                <span className="text-white font-mono">
+                  {Math.round((scale / minScale) * 100)}%
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onHaptic?.()
+                    const nextScale = Math.max(minScale, scale * 0.88)
+                    setScale(nextScale)
+                    setPan((prev) => clampPan(prev.x, prev.y, nextScale, frameSize.width, frameSize.height))
+                  }}
+                  className="p-1 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                  title="Уменьшить"
+                >
+                  <ZoomOut size={16} />
+                </button>
+
+                <input
+                  type="range"
+                  min={minScale}
+                  max={maxScale}
+                  step={(maxScale - minScale) / 100}
+                  value={scale}
+                  onChange={handleSliderChange}
+                  className="flex-1 h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onHaptic?.()
+                    const nextScale = Math.min(maxScale, scale * 1.14)
+                    setScale(nextScale)
+                    setPan((prev) => clampPan(prev.x, prev.y, nextScale, frameSize.width, frameSize.height))
+                  }}
+                  className="p-1 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                  title="Увеличить"
+                >
+                  <ZoomIn size={16} />
+                </button>
+              </div>
+            </div>
+
             {/* Action Buttons */}
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="button"
                 onClick={handleSave}

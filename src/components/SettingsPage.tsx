@@ -147,10 +147,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   {profile.firstName} {profile.lastName || ''}
                 </h3>
                 {profile.isPremium && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 text-[10px] font-black border border-amber-400/30">
-                    <TelegramStarIcon size={11} />
-                    PRO
-                  </span>
+                  <TelegramStarIcon size={16} className="shrink-0 -mt-0.5" />
                 )}
               </div>
               {profile.username && (
@@ -185,15 +182,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm font-black text-white tracking-tight">Кастомизация вишлиста</span>
-              {profile.coverUrl ? (
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[10px] font-black border border-emerald-500/30">
-                  Обложка есть ✓
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 text-[10px] font-bold">
-                  Обложка и стили
-                </span>
-              )}
             </div>
             <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
               Обложка профиля, готовые темы и визуальный стиль
@@ -273,16 +261,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             onHaptic()
             onOpenAdminModal()
           }}
-          className="w-full p-3.5 rounded-2xl bg-gradient-to-r from-purple-500/15 via-zinc-900 to-indigo-500/15 hover:from-purple-500/25 hover:to-indigo-500/25 border border-purple-500/30 shadow-lg shadow-purple-500/10 flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer group text-left"
+          className="w-full p-4 rounded-3xl bg-[#161618] hover:bg-[#1a1a1d] border border-white/10 hover:border-amber-400/30 shadow-xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer group text-left"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-300 shrink-0 group-hover:scale-105 transition-transform">
-              <BarChart3 size={18} />
+            <div className="w-10 h-10 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 shrink-0 group-hover:scale-105 transition-transform">
+              <BarChart3 size={19} />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs sm:text-sm font-black text-white">Панель создателя (Admin)</span>
-                <span className="px-1.5 py-0.5 rounded-full bg-purple-400/20 text-purple-300 text-[9px] font-bold border border-purple-400/30">
+                <span className="px-1.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 text-[9px] font-bold border border-amber-400/25">
                   Creator Access
                 </span>
               </div>
@@ -291,7 +279,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               </p>
             </div>
           </div>
-          <div className="w-7 h-7 rounded-full bg-white/10 group-hover:bg-white/20 text-purple-300 flex items-center justify-center shrink-0 ml-2 transition-colors">
+          <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-white/10 text-zinc-400 group-hover:text-white flex items-center justify-center shrink-0 ml-2 transition-colors">
             <ChevronRight size={15} />
           </div>
         </button>
