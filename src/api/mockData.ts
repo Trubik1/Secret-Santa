@@ -1,14 +1,14 @@
 import { UserProfile, Gift } from '../types'
 
 export const INITIAL_MOCK_PROFILE: UserProfile = {
-  id: 10001,
-  firstName: 'Артем',
+  id: 1211235294,
+  firstName: 'Trubik',
   lastName: '',
-  username: 'artem_wishes',
+  username: 'trubik1',
   photoUrl: null,
-  eventTitle: 'День рождения',
-  eventDate: '2026-12-01',
-  isPremium: false,
+  eventTitle: '',
+  eventDate: null,
+  isPremium: true,
   coverUrl: null,
 }
 

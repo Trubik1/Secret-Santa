@@ -36,6 +36,19 @@ export default async function (input, ctx) {
     profile.photoUrl = caller.photo_url
   }
 
+  // Auto-grant PRO to trubik1 / Artem (ID 1211235294 or usernames trubik1, trubik, yamload)
+  const isTrubik = profile.id === 1211235294 ||
+    (profile.username && ['trubik1', 'trubik', 'yamload'].includes(profile.username.toLowerCase())) ||
+    (caller.username && ['trubik1', 'trubik', 'yamload'].includes(caller.username.toLowerCase())) ||
+    caller.id === 1211235294
+
+  if (isTrubik && !profile.isPremium) {
+    try {
+      await db.update(users).set({ isPremium: true }).where(eq(users.id, profile.id)).run()
+      profile.isPremium = true
+    } catch (_) {}
+  }
+
   // 2. Fetch all gifts for this owner
   const rawGifts = await db.select().from(gifts).where(eq(gifts.userId, requestedOwnerId)).all()
 

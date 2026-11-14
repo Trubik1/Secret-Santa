@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Gift, WishlistData, DeleteReason } from './types'
+import { Gift, WishlistData, DeleteReason, UserProfile } from './types'
 import { useTelegram } from './hooks/useTelegram'
 import {
   serverlessCall,
@@ -60,15 +60,13 @@ export function App() {
     user,
     startParam,
     isInsideTelegram,
-    isFullscreen,
-    canFullscreen,
-    toggleFullscreen,
     haptics,
     openTelegramLink,
     openLink,
   } = useTelegram()
 
   const [data, setData] = useState<WishlistData | null>(null)
+  const [myProfile, setMyProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
   // Toast feedback
@@ -194,7 +192,8 @@ export function App() {
   const handleSaveCover = async (coverUrl: string) => {
     try {
       await serverlessCall('updateProfile', { coverUrl })
-      if (data) {
+      setMyProfile((prev) => (prev ? { ...prev, coverUrl } : null))
+      if (data && !isViewingFriend) {
         setData({
           ...data,
           profile: {
@@ -214,7 +213,8 @@ export function App() {
   const handleUpgradeSuccess = async () => {
     try {
       await serverlessCall('updateProfile', { isPremium: true })
-      if (data) {
+      setMyProfile((prev) => (prev ? { ...prev, isPremium: true } : null))
+      if (data && !isViewingFriend) {
         setData({
           ...data,
           profile: {
@@ -223,7 +223,7 @@ export function App() {
           },
         })
       }
-      showToast('Giftly Premium успешно активирован! ⭐️')
+      showToast('Giftly PRO успешно активирован! ⭐️')
       haptics.notification('success')
     } catch (err) {
       console.error(err)
@@ -242,16 +242,32 @@ export function App() {
   const loadWishlist = useCallback(async () => {
     try {
       setLoading(true)
-      const input = effectiveOwnerId ? { ownerId: effectiveOwnerId } : {}
-      const res = await serverlessCall<WishlistData>('getWishlist', input)
-      setData(res)
+      // 1. If viewing a friend, load friend's wishlist for catalog
+      if (effectiveOwnerId && isViewingFriend) {
+        const friendRes = await serverlessCall<WishlistData>('getWishlist', { ownerId: effectiveOwnerId })
+        setData(friendRes)
+      } else {
+        // 2. Load my own wishlist
+        const myRes = await serverlessCall<WishlistData>('getWishlist', {})
+        setData(myRes)
+        setMyProfile(myRes.profile)
+      }
+
+      // Always ensure myProfile is populated for Settings tab
+      if (isViewingFriend) {
+        serverlessCall<WishlistData>('getWishlist', {})
+          .then((res) => {
+            if (res?.profile) setMyProfile(res.profile)
+          })
+          .catch(() => {})
+      }
     } catch (err: any) {
       console.error('Failed to load wishlist:', err)
       showToast(err.message || 'Ошибка загрузки вишлиста')
     } finally {
       setLoading(false)
     }
-  }, [effectiveOwnerId, showToast])
+  }, [effectiveOwnerId, isViewingFriend, showToast])
 
   useEffect(() => {
     loadWishlist()
@@ -382,9 +398,15 @@ export function App() {
 
   const handleSaveProfile = async (eventTitle: string, eventDate: string | null) => {
     await serverlessCall('updateProfile', { eventTitle, eventDate })
+    setMyProfile((prev) => (prev ? { ...prev, eventTitle, eventDate } : null))
+    if (!isViewingFriend && data) {
+      setData({
+        ...data,
+        profile: { ...data.profile, eventTitle, eventDate },
+      })
+    }
     haptics.notification('success')
     showToast('Настройки сохранены ✨')
-    await loadWishlist()
   }
 
   const handleShareWishlist = () => {
@@ -487,9 +509,6 @@ export function App() {
                     setIsPremiumModalOpen(true)
                   }}
                   onHaptic={() => haptics.impact('light')}
-                  canFullscreen={canFullscreen}
-                  isFullscreen={isFullscreen}
-                  onToggleFullscreen={toggleFullscreen}
                 />
 
                 {/* Catalog Header */}
@@ -581,11 +600,11 @@ export function App() {
               />
             )}
 
-            {/* VIEW 4: SETTINGS (Full Page within Dock Navigation) */}
-            {currentNavTab === 'settings' && data && (
+            {/* VIEW 4: SETTINGS (Always renders current user's own profile!) */}
+            {currentNavTab === 'settings' && (myProfile || data?.profile) && (
               <SettingsPage
-                profile={data.profile}
-                isOwner={isEffectiveOwner}
+                profile={myProfile || data!.profile}
+                isOwner={true}
                 currencyMode={currencyMode}
                 onSelectCurrency={handleSelectCurrency}
                 onSaveProfile={handleSaveProfile}

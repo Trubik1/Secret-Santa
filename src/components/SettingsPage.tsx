@@ -166,22 +166,22 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
       </div>
 
-      {/* Action Banner 1: Big PRO Button or Active PRO Status directly below avatar/card */}
+      {/* Action Banner 1: PRO Account Card / Upgrade Button */}
       {profile.isPremium ? (
-        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-zinc-900 to-amber-500/5 border border-amber-500/25 flex items-center justify-between shadow-md">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center shrink-0">
+        <div className="p-4 rounded-3xl bg-[#161618] border border-white/10 shadow-lg flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center shrink-0">
               <TelegramStarIcon size={20} />
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black text-white">Giftly PRO активирован</span>
-                <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                  Forever
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-black text-white">Giftly PRO</span>
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/25">
+                  Активен
                 </span>
               </div>
-              <p className="text-[10px] text-zinc-400 mt-0.5">
-                Безлимит желаний, своя обложка и золотой статус
+              <p className="text-[11px] text-zinc-400 mt-0.5">
+                Безлимит желаний, своя обложка и статус разблокированы
               </p>
             </div>
           </div>
@@ -190,9 +190,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               onHaptic()
               onOpenPremiumModal()
             }}
-            className="text-[10px] font-bold text-amber-300 hover:text-white underline underline-offset-2 shrink-0 px-2 py-1 cursor-pointer"
+            className="text-[10px] font-bold text-zinc-400 hover:text-white px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors shrink-0 cursor-pointer"
           >
-            Возможности
+            Инфо
           </button>
         </div>
       ) : (
@@ -202,26 +202,26 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             onHaptic()
             onOpenPremiumModal()
           }}
-          className="w-full p-4 rounded-3xl bg-gradient-to-r from-amber-500/20 via-[#1e1b18] to-yellow-500/10 hover:from-amber-500/25 hover:to-yellow-500/15 border border-amber-400/35 shadow-xl shadow-amber-500/10 flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer group text-left relative overflow-hidden"
+          className="w-full p-4 rounded-3xl bg-[#161618] hover:bg-[#1a1a1d] border border-white/10 hover:border-white/20 shadow-xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer group text-left"
         >
-          <div className="flex items-center gap-3 relative z-10">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-b from-amber-400/25 to-amber-500/10 border border-amber-400/40 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-md shadow-amber-500/20">
-              <TelegramStarIcon size={24} />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <TelegramStarIcon size={20} />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-black text-white tracking-tight">Улучшить до PRO</span>
-                <span className="px-1.5 py-0.5 rounded-full bg-amber-400 text-black text-[9px] font-black uppercase shadow-sm">
+                <span className="text-xs sm:text-sm font-black text-white tracking-tight">Giftly PRO</span>
+                <span className="px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-300 text-[10px] font-black border border-amber-400/25">
                   50 ⭐
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-300 font-medium mt-0.5">
+              <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
                 Безлимит желаний, своя обложка профиля и золотой бейдж
               </p>
             </div>
           </div>
-          <div className="w-8 h-8 rounded-full bg-white/10 group-hover:bg-white/20 text-amber-300 flex items-center justify-center shrink-0 ml-2 transition-colors relative z-10">
-            <ChevronRight size={16} />
+          <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-white/10 text-zinc-400 group-hover:text-white flex items-center justify-center shrink-0 ml-2 transition-colors">
+            <ChevronRight size={15} />
           </div>
         </button>
       )}

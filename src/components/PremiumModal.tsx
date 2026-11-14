@@ -6,7 +6,6 @@ import {
   Image as ImageIcon,
   Award,
   Pin,
-  TrendingUp,
   ShieldCheck,
 } from 'lucide-react'
 import { payWithTelegramStars } from '../api/serverless'
@@ -21,7 +20,7 @@ interface PremiumModalProps {
 }
 
 /**
- * High-DPI Vector Telegram Star Badge (No pixelation, pure SVG)
+ * High-DPI Vector Telegram Star Badge (Pure SVG, no pixelation)
  */
 export const TelegramStarIcon: React.FC<{ size?: number; className?: string }> = ({
   size = 24,
@@ -58,11 +57,10 @@ export const TelegramStarIcon: React.FC<{ size?: number; className?: string }> =
           <stop offset="100%" stopColor="#FFA000" stopOpacity="0" />
         </radialGradient>
         <filter id="starBloom" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#FFB800" floodOpacity="0.45" />
+          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#FFB800" floodOpacity="0.4" />
         </filter>
       </defs>
 
-      {/* Main Faceted Star Geometry */}
       <g filter="url(#starBloom)">
         <path
           d="M16 2.5L19.8 11.2L29.2 12.3L22.2 18.6L24.1 28L16 23.3L7.9 28L9.8 18.6L2.8 12.3L12.2 11.2L16 2.5Z"
@@ -71,17 +69,14 @@ export const TelegramStarIcon: React.FC<{ size?: number; className?: string }> =
           strokeWidth="0.8"
           strokeLinejoin="round"
         />
-        {/* Right 3D shading facet */}
         <path
           d="M16 2.5V23.3L24.1 28L22.2 18.6L29.2 12.3L19.8 11.2L16 2.5Z"
           fill="url(#starFacetedRight)"
         />
-        {/* Specular Gleam Highlight */}
         <path
           d="M16 3.8L13 11.5L4.5 12.5L10.8 18.2L9.2 26.5L16 22.5V3.8Z"
           fill="url(#starGlassGleam)"
         />
-        {/* Center Glow */}
         <circle cx="16" cy="15" r="5" fill="url(#starCoreLight)" />
       </g>
     </svg>
@@ -107,7 +102,7 @@ export const PremiumModal: React.FC<PremiumModalProps> = ({
     await payWithTelegramStars({
       amount: 50,
       title: 'Giftly PRO ⭐️',
-      description: 'Безлимитные желания + кастомная обложка + статус PRO навсегда',
+      description: 'Безлимит желаний, своя обложка и PRO статус навсегда',
       onSuccess: () => {
         fireConfetti()
         onHaptic?.()
@@ -126,163 +121,132 @@ export const PremiumModal: React.FC<PremiumModalProps> = ({
     })
   }
 
-  const reasonTitle =
-    reason === 'limit'
-      ? 'Лимит желаний исчерпан'
-      : reason === 'cover'
-      ? 'Кастомная обложка вишлиста'
-      : 'Подключите Giftly PRO'
-
   const reasonSubtitle =
     reason === 'limit'
-      ? 'На базовом тарифе доступно до 5 подарков. Разблокируйте безлимит и эксклюзивные функции!'
+      ? 'На бесплатном тарифе доступно до 5 подарков. Разблокируйте безлимит навсегда!'
       : reason === 'cover'
-      ? 'Установка собственного фона доступна владельцам Giftly PRO.'
-      : 'Снимите любые ограничения и сделайте свой профиль по-настоящему особенным.'
+      ? 'Установка собственного фона доступна в подписке Giftly PRO.'
+      : 'Разблокируйте полный потенциал и персонализацию вашего вишлиста.'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn select-none"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-md bg-[#161618] rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-white/10 max-h-[92vh] overflow-y-auto animate-apple-spring"
+        className="w-full max-w-md bg-[#141416] rounded-t-[32px] sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-white/10 animate-apple-spring relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between pb-3.5 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center shadow-md shadow-amber-500/10 shrink-0">
-              <TelegramStarIcon size={22} />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h2 className="text-base font-black text-white tracking-tight">Giftly PRO</h2>
-                <span className="px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[9px] font-extrabold uppercase border border-amber-400/30">
-                  Forever
-                </span>
-              </div>
-              <span className="text-[11px] font-bold text-amber-400 block mt-0.5">
-                50 ⭐ Telegram Stars (разово)
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              onHaptic?.()
-              onClose()
-            }}
-            className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-          >
-            <X size={18} />
-          </button>
-        </div>
+        {/* Drag Handle for Bottom Sheet */}
+        <div className="w-9 h-1 rounded-full bg-white/20 mx-auto mb-2" />
 
-        {/* Hero Banner with Radiant 3D Star & Specular Aura */}
-        <div className="mt-4 p-5 rounded-3xl bg-gradient-to-b from-amber-500/15 via-[#1a1714] to-[#121214] border border-amber-500/30 text-center relative overflow-hidden shadow-inner">
-          {/* Subtle Ambient Radial Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-36 h-36 bg-amber-500/20 rounded-full blur-2xl pointer-events-none" />
+        {/* Close Button */}
+        <button
+          onClick={() => {
+            onHaptic?.()
+            onClose()
+          }}
+          className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+        >
+          <X size={16} />
+        </button>
 
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-white/10 to-amber-500/10 border border-amber-400/30 flex items-center justify-center shadow-xl shadow-amber-500/15 mb-3 backdrop-blur-md">
+        {/* Hero Section */}
+        <div className="flex flex-col items-center text-center pt-2 pb-4">
+          <div className="relative mb-2.5">
+            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
               <TelegramStarIcon size={38} />
             </div>
-            <h3 className="text-base font-black text-white">{reasonTitle}</h3>
-            <p className="text-xs text-zinc-300 mt-1 max-w-xs leading-relaxed font-medium">
-              {reasonSubtitle}
-            </p>
           </div>
+
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-xl font-black text-white tracking-tight">Giftly PRO</h2>
+            <span className="px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-300 text-[10px] font-bold border border-amber-400/25">
+              Forever
+            </span>
+          </div>
+
+          <p className="text-xs text-zinc-400 mt-1 max-w-xs leading-relaxed">
+            {reasonSubtitle}
+          </p>
         </div>
 
-        {/* PRO Perks List */}
-        <div className="mt-4 space-y-2.5">
-          {/* Perk 1: Unlimited Wishes */}
-          <div className="p-3.5 rounded-2xl bg-zinc-900/90 border border-white/5 flex items-start gap-3 hover:border-amber-500/20 transition-colors">
-            <div className="p-2 rounded-xl bg-amber-400/10 text-amber-300 border border-amber-400/20 shrink-0 mt-0.5">
-              <Infinity size={17} />
+        {/* 2x2 Bento Grid (Compact, no endless scrolling!) */}
+        <div className="grid grid-cols-2 gap-2.5 my-2">
+          {/* Card 1 */}
+          <div className="p-3.5 rounded-2xl bg-[#1c1c1f] border border-white/5 flex flex-col justify-between">
+            <div className="w-8 h-8 rounded-xl bg-white/5 text-amber-300 flex items-center justify-center mb-2">
+              <Infinity size={16} />
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <h4 className="text-xs font-black text-white">Безлимитные желания</h4>
-                <span className="text-[9px] font-bold text-amber-400 uppercase bg-amber-400/10 px-1 rounded">No Limit</span>
-              </div>
-              <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">
-                Добавляйте неограниченное число подарков с Wildberries, Ozon, AliExpress или вручную без ограничений.
+            <div>
+              <h4 className="text-xs font-black text-white">Безлимит желаний</h4>
+              <p className="text-[10px] text-zinc-400 mt-0.5 leading-snug">
+                Сколько угодно подарков без лимита в 5 штук
               </p>
             </div>
           </div>
 
-          {/* Perk 2: Custom Cover */}
-          <div className="p-3.5 rounded-2xl bg-zinc-900/90 border border-white/5 flex items-start gap-3 hover:border-amber-500/20 transition-colors">
-            <div className="p-2 rounded-xl bg-amber-400/10 text-amber-300 border border-amber-400/20 shrink-0 mt-0.5">
-              <ImageIcon size={17} />
+          {/* Card 2 */}
+          <div className="p-3.5 rounded-2xl bg-[#1c1c1f] border border-white/5 flex flex-col justify-between">
+            <div className="w-8 h-8 rounded-xl bg-white/5 text-amber-300 flex items-center justify-center mb-2">
+              <ImageIcon size={16} />
             </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="text-xs font-black text-white">Персональная обложка вишлиста</h4>
-              <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">
-                Загружайте любое своё фото в шапку профиля с удобным зумом и масштабированием.
+            <div>
+              <h4 className="text-xs font-black text-white">Своя обложка</h4>
+              <p className="text-[10px] text-zinc-400 mt-0.5 leading-snug">
+                Любое фото в шапку профиля с кроппером
               </p>
             </div>
           </div>
 
-          {/* Perk 3: Golden PRO Badge */}
-          <div className="p-3.5 rounded-2xl bg-zinc-900/90 border border-white/5 flex items-start gap-3 hover:border-amber-500/20 transition-colors">
-            <div className="p-2 rounded-xl bg-amber-400/10 text-amber-300 border border-amber-400/20 shrink-0 mt-0.5">
-              <Award size={17} />
+          {/* Card 3 */}
+          <div className="p-3.5 rounded-2xl bg-[#1c1c1f] border border-white/5 flex flex-col justify-between">
+            <div className="w-8 h-8 rounded-xl bg-white/5 text-amber-300 flex items-center justify-center mb-2">
+              <Award size={16} />
             </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="text-xs font-black text-white">Золотой статус PRO ⭐️</h4>
-              <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">
-                Сияющая золотая звезда возле вашего имени в профиле, вишлисте и для всех гостей.
+            <div>
+              <h4 className="text-xs font-black text-white">Золотой статус</h4>
+              <p className="text-[10px] text-zinc-400 mt-0.5 leading-snug">
+                Бейдж PRO в профиле и для всех гостей
               </p>
             </div>
           </div>
 
-          {/* Perk 4: Pin Top Wish */}
-          <div className="p-3.5 rounded-2xl bg-zinc-900/90 border border-white/5 flex items-start gap-3 hover:border-amber-500/20 transition-colors">
-            <div className="p-2 rounded-xl bg-amber-400/10 text-amber-300 border border-amber-400/20 shrink-0 mt-0.5">
-              <Pin size={17} />
+          {/* Card 4 */}
+          <div className="p-3.5 rounded-2xl bg-[#1c1c1f] border border-white/5 flex flex-col justify-between">
+            <div className="w-8 h-8 rounded-xl bg-white/5 text-amber-300 flex items-center justify-center mb-2">
+              <Pin size={16} />
             </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="text-xs font-black text-white">Приоритет главной мечты</h4>
-              <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">
-                Закрепляйте самое желанное на первом месте, чтобы друзья сразу видели вашу цель.
-              </p>
-            </div>
-          </div>
-
-          {/* Perk 5: Secret Santa & Surprise Analytics */}
-          <div className="p-3.5 rounded-2xl bg-zinc-900/90 border border-white/5 flex items-start gap-3 hover:border-amber-500/20 transition-colors">
-            <div className="p-2 rounded-xl bg-amber-400/10 text-amber-300 border border-amber-400/20 shrink-0 mt-0.5">
-              <TrendingUp size={17} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="text-xs font-black text-white">Умная статистика и аналитика</h4>
-              <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">
-                Отслеживайте статистику интереса к вашему вишлисту без раскрытия сюрпризов.
+            <div>
+              <h4 className="text-xs font-black text-white">PIN в каталоге</h4>
+              <p className="text-[10px] text-zinc-400 mt-0.5 leading-snug">
+                Закрепление главной мечты на 1 месте
               </p>
             </div>
           </div>
         </div>
 
-        {/* Pricing & CTA */}
-        <div className="mt-5 pt-3 border-t border-white/10 space-y-2">
+        {/* Pricing & Clean Apple Button */}
+        <div className="mt-4 pt-3 border-t border-white/10 space-y-2">
           <button
             type="button"
             onClick={handleBuyPremium}
             disabled={isSubmitting}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:brightness-105 active:scale-[0.98] text-black text-xs sm:text-sm font-black shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2.5 transition-all cursor-pointer disabled:opacity-50"
+            className="w-full py-3.5 rounded-full bg-white hover:bg-zinc-100 active:scale-[0.98] text-black text-sm font-black shadow-xl flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
           >
             {isSubmitting ? (
               <Loader2 size={18} className="animate-spin text-black" />
             ) : (
               <>
-                <TelegramStarIcon size={20} />
-                <span>Активировать PRO за 50 ⭐ навсегда</span>
+                <TelegramStarIcon size={18} />
+                <span>Активировать за 50 ⭐</span>
               </>
             )}
           </button>
 
-          <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-400 font-medium">
-            <ShieldCheck size={14} className="text-emerald-400" />
-            <span>Официальная разовая оплата через Telegram Stars</span>
+          <div className="flex items-center justify-center gap-1.5 text-[10px] text-zinc-400">
+            <ShieldCheck size={12} className="text-zinc-500" />
+            <span>Разовая покупка через Telegram Stars • Навсегда</span>
           </div>
         </div>
       </div>

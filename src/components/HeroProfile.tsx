@@ -1,6 +1,6 @@
 import React from 'react'
 import { UserProfile } from '../types'
-import { Plus, Share2, Calendar, Camera, Maximize2, Minimize2 } from 'lucide-react'
+import { Plus, Share2, Calendar, Camera } from 'lucide-react'
 import { TelegramStarIcon } from './PremiumModal'
 
 interface HeroProfileProps {
@@ -12,9 +12,6 @@ interface HeroProfileProps {
   onOpenCoverModal?: () => void
   onOpenPremiumModal?: (reason: 'limit' | 'cover' | 'general') => void
   onHaptic?: () => void
-  canFullscreen?: boolean
-  isFullscreen?: boolean
-  onToggleFullscreen?: () => void
 }
 
 export const HeroProfile: React.FC<HeroProfileProps> = ({
@@ -26,9 +23,6 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
   onOpenCoverModal,
   onOpenPremiumModal,
   onHaptic,
-  canFullscreen,
-  isFullscreen,
-  onToggleFullscreen,
 }) => {
   const [imgFailed, setImgFailed] = React.useState(false)
   const initial = (profile.firstName || 'А')[0].toUpperCase()
@@ -135,21 +129,8 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
             )}
           </div>
 
-          {/* User Avatar + Cover Button + Share Button + Fullscreen Toggle */}
+          {/* User Avatar + Cover Button + Share Button */}
           <div className="flex items-center gap-2 shrink-0">
-            {canFullscreen && (
-              <button
-                onClick={() => {
-                  onHaptic?.()
-                  onToggleFullscreen?.()
-                }}
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 border border-white/10 cursor-pointer"
-                title={isFullscreen ? 'Свернуть окно' : 'На весь экран'}
-              >
-                {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-              </button>
-            )}
-
             {isOwner && (
               <button
                 onClick={handleCoverClick}
