@@ -128,6 +128,21 @@ export function App() {
     return Boolean(data?.isOwner)
   }, [isViewingFriend, data?.isOwner])
 
+  // Current user's PRO status (creator trubik1 is guaranteed PRO)
+  const isUserPremium = useMemo(() => {
+    if (user?.id === 1211235294 || user?.username?.toLowerCase() === 'trubik1') return true
+    return Boolean(myProfile?.isPremium || (isEffectiveOwner && data?.profile?.isPremium))
+  }, [user?.id, user?.username, myProfile?.isPremium, isEffectiveOwner, data?.profile?.isPremium])
+
+  // Profile data with synchronized PRO status for owner
+  const effectiveProfile = useMemo(() => {
+    if (!data?.profile) return null
+    if (isEffectiveOwner && isUserPremium) {
+      return { ...data.profile, isPremium: true }
+    }
+    return data.profile
+  }, [data?.profile, isEffectiveOwner, isUserPremium])
+
   const handleBackToMyWishlist = useCallback(() => {
     haptics.impact('light')
     setViewingFriendId(null)
@@ -292,7 +307,7 @@ export function App() {
 
   // Gift actions
   const handleOpenAddModal = () => {
-    if (data && !data.profile.isPremium && data.gifts.length >= 5) {
+    if (data && !isUserPremium && data.gifts.length >= 5) {
       haptics.notification('warning')
       setPremiumReason('limit')
       setIsPremiumModalOpen(true)
@@ -498,7 +513,7 @@ export function App() {
 
                 {/* Giftly Minimalist Hero Banner */}
                 <HeroProfile
-                  profile={data.profile}
+                  profile={effectiveProfile || data.profile}
                   isOwner={isEffectiveOwner}
                   totalGifts={data.gifts.length}
                   onOpenShare={handleShareWishlist}
@@ -603,7 +618,10 @@ export function App() {
             {/* VIEW 4: SETTINGS (Always renders current user's own profile!) */}
             {currentNavTab === 'settings' && (myProfile || data?.profile) && (
               <SettingsPage
-                profile={myProfile || data!.profile}
+                profile={{
+                  ...(myProfile || data!.profile),
+                  isPremium: isUserPremium || Boolean(myProfile?.isPremium),
+                }}
                 isOwner={true}
                 currencyMode={currencyMode}
                 onSelectCurrency={handleSelectCurrency}
@@ -705,6 +723,7 @@ export function App() {
       <PremiumModal
         isOpen={isPremiumModalOpen}
         reason={premiumReason}
+        isAlreadyPremium={isUserPremium}
         onClose={() => setIsPremiumModalOpen(false)}
         onSuccessUpgrade={handleUpgradeSuccess}
         onHaptic={() => haptics.impact('light')}

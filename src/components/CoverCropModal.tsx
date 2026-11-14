@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { X, Upload, ZoomOut, Check, Loader2, Sparkles, RefreshCw } from 'lucide-react'
+import { X, Upload, ZoomIn, ZoomOut, RotateCcw, Check, Loader2, Sparkles, RefreshCw } from 'lucide-react'
 
 interface CoverCropModalProps {
   isOpen: boolean
@@ -15,6 +15,8 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
   onHaptic,
 }) => {
   const [imageSrc, setImageSrc] = useState<string | null>(null)
+  const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null)
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 360, height: 144 })
   const [zoom, setZoom] = useState<number>(1)
   const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -34,6 +36,76 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
     }
   }, [isOpen])
 
+  // Track container dimensions accurately
+  useEffect(() => {
+    if (!containerRef.current || !isOpen) return
+
+    const updateSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        if (rect.width > 0 && rect.height > 0) {
+          setContainerSize({ width: rect.width, height: rect.height })
+        }
+      }
+    }
+
+    updateSize()
+    const observer = new ResizeObserver(updateSize)
+    observer.observe(containerRef.current)
+    return () => observer.disconnect()
+  }, [imageSrc, isOpen])
+
+  // Calculate base dimensions (fit container at zoom=1 without empty space)
+  const containerAspect =
+    containerSize.width > 0 && containerSize.height > 0
+      ? containerSize.width / containerSize.height
+      : 2.5
+
+  let baseWidth = containerSize.width
+  let baseHeight = containerSize.height
+
+  if (naturalSize && naturalSize.width > 0 && naturalSize.height > 0) {
+    const imgAspect = naturalSize.width / naturalSize.height
+    if (imgAspect > containerAspect) {
+      // Wider than container: match height, width extends
+      baseHeight = containerSize.height
+      baseWidth = baseHeight * imgAspect
+    } else {
+      // Taller than container: match width, height extends
+      baseWidth = containerSize.width
+      baseHeight = baseWidth / imgAspect
+    }
+  }
+
+  const displayWidth = baseWidth * zoom
+  const displayHeight = baseHeight * zoom
+
+  // Maximum allowed drag offset to prevent any black/empty gaps
+  const maxOffsetX = Math.max(0, (displayWidth - containerSize.width) / 2)
+  const maxOffsetY = Math.max(0, (displayHeight - containerSize.height) / 2)
+
+  // Zoom handler with boundary clamping
+  const handleZoomChange = (newZoom: number) => {
+    const nextZoom = Math.min(2.5, Math.max(1, Math.round(newZoom * 100) / 100))
+    setZoom(nextZoom)
+
+    const nextDisplayW = baseWidth * nextZoom
+    const nextDisplayH = baseHeight * nextZoom
+    const nextMaxX = Math.max(0, (nextDisplayW - containerSize.width) / 2)
+    const nextMaxY = Math.max(0, (nextDisplayH - containerSize.height) / 2)
+
+    setOffset((prev) => ({
+      x: Math.min(nextMaxX, Math.max(-nextMaxX, prev.x)),
+      y: Math.min(nextMaxY, Math.max(-nextMaxY, prev.y)),
+    }))
+  }
+
+  const handleResetPosition = () => {
+    onHaptic?.()
+    setZoom(1)
+    setOffset({ x: 0, y: 0 })
+  }
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -42,30 +114,41 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
     const reader = new FileReader()
     reader.onload = (event) => {
       if (typeof event.target?.result === 'string') {
-        setImageSrc(event.target.result)
+        const src = event.target.result
+        setImageSrc(src)
         setZoom(1)
         setOffset({ x: 0, y: 0 })
+
+        const img = new Image()
+        img.onload = () => {
+          setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight })
+        }
+        img.src = src
       }
     }
     reader.readAsDataURL(file)
   }
 
-  // Pointer / Touch drag handling
+  // Pointer / Touch drag handling (1:1 fluid tracking)
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (!imageSrc) return
+    if (!imageSrc || !naturalSize) return
     setIsDragging(true)
     dragStartRef.current = {
       x: e.clientX - offset.x,
       y: e.clientY - offset.y,
     }
-    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+    try {
+      ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+    } catch (_) {}
   }
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging) return
+    const rawX = e.clientX - dragStartRef.current.x
+    const rawY = e.clientY - dragStartRef.current.y
     setOffset({
-      x: e.clientX - dragStartRef.current.x,
-      y: e.clientY - dragStartRef.current.y,
+      x: Math.min(maxOffsetX, Math.max(-maxOffsetX, rawX)),
+      y: Math.min(maxOffsetY, Math.max(-maxOffsetY, rawY)),
     })
   }
 
@@ -76,21 +159,45 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
     } catch (_) {}
   }
 
-  // Perform client-side canvas crop & WebP compression (~800x320 px, ~40 KB)
+  // Smooth wheel zoom
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault()
+    const step = e.deltaY > 0 ? -0.05 : 0.05
+    handleZoomChange(zoom + step)
+  }
+
+  // High-Resolution Retina Crop (1200 x 480 at quality 0.92)
   const handleSave = useCallback(async () => {
-    if (!imageRef.current || !containerRef.current || isSaving) return
+    if (!imageRef.current || !naturalSize || !containerRef.current || isSaving) return
 
     setIsSaving(true)
     onHaptic?.()
 
     try {
       const img = imageRef.current
-      const container = containerRef.current
-      const rect = container.getBoundingClientRect()
+      const Wc = containerSize.width
+      const Hc = containerSize.height
+      const Wn = naturalSize.width
+      const Hn = naturalSize.height
+      const Wd = displayWidth
+      const Hd = displayHeight
 
-      // Target banner resolution: 800 x 320 (2.5 : 1 ratio)
-      const targetWidth = 800
-      const targetHeight = 320
+      // Scale factor from DOM displayed pixels to natural image pixels
+      const S = Wn / Wd
+
+      // Visible crop top-left relative to image in DOM coordinates
+      const cropX_dom = (Wd - Wc) / 2 - offset.x
+      const cropY_dom = (Hd - Hc) / 2 - offset.y
+
+      // Crop coordinates in natural image pixels
+      const sx = Math.max(0, Math.min(Wn - 1, cropX_dom * S))
+      const sy = Math.max(0, Math.min(Hn - 1, cropY_dom * S))
+      const sw = Math.min(Wn - sx, Wc * S)
+      const sh = Math.min(Hn - sy, Hc * S)
+
+      // Target high-definition retina banner resolution (2.5 : 1 ratio)
+      const targetWidth = 1200
+      const targetHeight = 480
 
       const canvas = document.createElement('canvas')
       canvas.width = targetWidth
@@ -98,41 +205,17 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
       const ctx = canvas.getContext('2d')
       if (!ctx) throw new Error('Canvas not supported')
 
-      // Calculate source crop coordinates based on zoom & offset
-      const containerAspect = rect.width / rect.height
-      const imgAspect = img.naturalWidth / img.naturalHeight
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight)
 
-      let baseWidth: number
-      let baseHeight: number
-      if (imgAspect > containerAspect) {
-        baseHeight = rect.height
-        baseWidth = baseHeight * imgAspect
-      } else {
-        baseWidth = rect.width
-        baseHeight = baseWidth / imgAspect
+      // High-quality crisp WebP (0.92), fallback to JPEG
+      let outputDataUrl = canvas.toDataURL('image/webp', 0.92)
+      if (!outputDataUrl.startsWith('data:image/webp')) {
+        outputDataUrl = canvas.toDataURL('image/jpeg', 0.92)
       }
 
-      const currentWidth = baseWidth * zoom
-      const currentHeight = baseHeight * zoom
-
-      // Center of container in image space
-      const scaleX = img.naturalWidth / currentWidth
-      const scaleY = img.naturalHeight / currentHeight
-
-      const imgLeftOnContainer = (rect.width - currentWidth) / 2 + offset.x
-      const imgTopOnContainer = (rect.height - currentHeight) / 2 + offset.y
-
-      const cropX = Math.max(0, -imgLeftOnContainer * scaleX)
-      const cropY = Math.max(0, -imgTopOnContainer * scaleY)
-      const cropW = Math.min(img.naturalWidth - cropX, rect.width * scaleX)
-      const cropH = Math.min(img.naturalHeight - cropY, rect.height * scaleY)
-
-      ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetWidth, targetHeight)
-
-      // Compress to high-efficiency WebP (quality 0.82)
-      const webpDataUrl = canvas.toDataURL('image/webp', 0.82)
-
-      await onSaveCover(webpDataUrl)
+      await onSaveCover(outputDataUrl)
       onClose()
     } catch (err) {
       console.error('Failed to crop and save cover:', err)
@@ -140,7 +223,7 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
     } finally {
       setIsSaving(false)
     }
-  }, [isSaving, onHaptic, onSaveCover, onClose, zoom, offset])
+  }, [naturalSize, containerSize, displayWidth, displayHeight, offset, isSaving, onHaptic, onSaveCover, onClose])
 
   if (!isOpen) return null
 
@@ -170,7 +253,7 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
               onHaptic?.()
               onClose()
             }}
-            className="p-1.5 rounded-full text-zinc-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-full text-zinc-400 hover:text-white transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -193,7 +276,7 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
                 onHaptic?.()
                 fileInputRef.current?.click()
               }}
-              className="w-full aspect-[2.5/1] rounded-2xl border-2 border-dashed border-white/20 hover:border-amber-400/60 bg-zinc-900/60 flex flex-col items-center justify-center gap-2 transition-all group active:scale-[0.98]"
+              className="w-full aspect-[2.5/1] rounded-2xl border-2 border-dashed border-white/20 hover:border-amber-400/60 bg-zinc-900/60 flex flex-col items-center justify-center gap-2 transition-all group active:scale-[0.98] cursor-pointer"
             >
               <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-zinc-400 group-hover:text-amber-400 transition-colors">
                 <Upload size={22} />
@@ -201,14 +284,11 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
               <span className="text-xs font-bold text-zinc-300">
                 Выбрать фото из галереи
               </span>
-              <span className="text-[10px] text-zinc-500">
-                Оптимизируется до лёгких 40 КБ в формате WebP
-              </span>
             </button>
           </div>
         ) : (
           <div className="mt-4 space-y-4">
-            {/* Viewport Box (2.5:1 ratio, exactly matching Hero card) */}
+            {/* Viewport Box (2.5:1 ratio, matching Hero banner exactly) */}
             <div className="relative">
               <div
                 ref={containerRef}
@@ -216,6 +296,7 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
+                onWheel={handleWheel}
                 className="w-full aspect-[2.5/1] rounded-2xl overflow-hidden bg-black border border-white/20 relative cursor-grab active:cursor-grabbing touch-none select-none flex items-center justify-center"
               >
                 <img
@@ -223,21 +304,27 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
                   src={imageSrc}
                   alt="Crop preview"
                   draggable={false}
+                  onLoad={(e) => {
+                    const img = e.currentTarget
+                    setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight })
+                  }}
                   style={{
-                    transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                    width: `${displayWidth}px`,
+                    height: `${displayHeight}px`,
+                    transform: `translate(${offset.x}px, ${offset.y}px)`,
                     transformOrigin: 'center center',
-                    maxHeight: 'none',
                     maxWidth: 'none',
-                    transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                    maxHeight: 'none',
+                    transition: isDragging ? 'none' : 'transform 0.08s ease-out',
                   }}
                   className="pointer-events-none select-none"
                 />
 
-                {/* Grid Overlay / Guide */}
+                {/* Subtle Framing Overlay */}
                 <div className="absolute inset-0 border border-white/20 rounded-2xl pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
-                {/* Avatar preview placeholder to help framing */}
+                {/* Avatar guide to help the user frame heads/subjects */}
                 <div className="absolute top-3 right-3 w-8 h-8 rounded-full border border-white/40 bg-white/20 backdrop-blur-md flex items-center justify-center text-[9px] font-black text-white pointer-events-none shadow-md">
                   Ава
                 </div>
@@ -246,46 +333,81 @@ export const CoverCropModal: React.FC<CoverCropModalProps> = ({
                 </div>
               </div>
 
+              {/* Quick Change Button */}
               <button
                 type="button"
                 onClick={() => {
                   onHaptic?.()
                   fileInputRef.current?.click()
                 }}
-                className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md text-[10px] font-bold text-zinc-200 border border-white/10 flex items-center gap-1 active:scale-95"
+                className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-md text-[10px] font-bold text-zinc-200 border border-white/10 flex items-center gap-1 active:scale-95 cursor-pointer"
               >
                 <RefreshCw size={10} />
                 <span>Другое фото</span>
               </button>
             </div>
 
-            {/* Zoom Slider */}
-            <div className="px-1 space-y-1.5">
-              <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
-                <span className="flex items-center gap-1 text-[11px]">
-                  <ZoomOut size={13} />
-                  <span>Масштаб</span>
+            {/* Clear Intuitive Zoom Controls */}
+            <div className="p-3 rounded-2xl bg-zinc-900/60 border border-white/5 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
+                <span className="text-[11px] font-semibold text-zinc-400">
+                  Масштаб
                 </span>
-                <span className="text-[11px] text-zinc-300 font-mono">
-                  {Math.round(zoom * 100)}%
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] text-amber-400 font-mono font-bold">
+                    {Math.round(zoom * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleResetPosition}
+                    className="inline-flex items-center gap-1 text-[10px] text-zinc-400 hover:text-white px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                    title="Сбросить масштаб и положение"
+                  >
+                    <RotateCcw size={10} />
+                    <span>Сбросить</span>
+                  </button>
+                </div>
               </div>
-              <input
-                type="range"
-                min="1"
-                max="3"
-                step="0.05"
-                value={zoom}
-                onChange={(e) => setZoom(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-              />
-              <p className="text-[10px] text-zinc-500 text-center pt-0.5">
-                Передвигайте фото пальцем для идеального ракурса
-              </p>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onHaptic?.()
+                    handleZoomChange(zoom - 0.1)
+                  }}
+                  disabled={zoom <= 1}
+                  className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 text-zinc-300 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <ZoomOut size={13} />
+                </button>
+
+                <input
+                  type="range"
+                  min="1"
+                  max="2.5"
+                  step="0.02"
+                  value={zoom}
+                  onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
+                  className="flex-1 h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onHaptic?.()
+                    handleZoomChange(zoom + 0.1)
+                  }}
+                  disabled={zoom >= 2.5}
+                  className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 text-zinc-300 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <ZoomIn size={13} />
+                </button>
+              </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="button"
                 onClick={handleSave}
