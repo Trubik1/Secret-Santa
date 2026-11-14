@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { UserProfile } from '../types'
 import { X, Copy, Check, Send, Sparkles } from 'lucide-react'
-import { useTelegram } from '../hooks/useTelegram'
 
 interface ShareModalProps {
   isOpen: boolean
@@ -20,7 +19,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   onHaptic,
   onShowToast,
 }) => {
-  const { openTelegramLink } = useTelegram()
   const [copied, setCopied] = useState(false)
 
   if (!isOpen) return null
@@ -52,8 +50,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   const handleTelegramShare = () => {
     onHaptic()
-    const tgUrl = `https://t.me/share/url?url=&text=${encodeURIComponent(shareText)}`
-    openTelegramLink(tgUrl)
+    const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(
+      'Мой вишлист 🎁'
+    )}`
+    window.open(tgUrl, '_blank')
   }
 
   const initial = (user.firstName || 'А')[0].toUpperCase()
