@@ -4,7 +4,6 @@ import {
   Palette,
   Camera,
   Trash2,
-  Sparkles,
   Layers,
 } from 'lucide-react'
 import { UserProfile } from '../types'
@@ -261,11 +260,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
         <div className="mt-5 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-              Готовые дизайнерские темы
-            </span>
-            <span className="text-[10px] text-amber-400 font-bold flex items-center gap-1">
-              <Sparkles size={11} />
-              В 1 клик
+              Готовые темы
             </span>
           </div>
 
@@ -287,57 +282,6 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Section 3: Profile & Avatar Details */}
-        <div className="mt-5 p-3.5 rounded-2xl bg-[#1c1c1f] border border-white/5 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-full overflow-hidden ring-1 ring-white/15 bg-zinc-800 shrink-0">
-                {profile.photoUrl ? (
-                  <img src={profile.photoUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-zinc-700 flex items-center justify-center text-xs font-black text-white">
-                    {(profile.firstName || 'А')[0].toUpperCase()}
-                  </div>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs font-black text-white">
-                    {profile.firstName} {profile.lastName || ''}
-                  </span>
-                  {isPremium && <TelegramStarIcon size={14} />}
-                </div>
-                {profile.username && (
-                  <span className="text-[10px] text-zinc-400 block">
-                    @{profile.username}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {isPremium ? (
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[10px] font-black border border-emerald-500/30">
-                PRO ✓
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  onClose()
-                  onOpenPremiumModal('general')
-                }}
-                className="px-2.5 py-1 rounded-xl bg-amber-400/15 text-amber-300 text-[10px] font-black border border-amber-400/25 active:scale-95 transition-all cursor-pointer"
-              >
-                Получить PRO
-              </button>
-            )}
-          </div>
-
-          <p className="text-[10px] text-zinc-500 leading-relaxed pt-1 border-t border-white/5">
-            Аватарка и имя пользователя автоматически синхронизируются с вашим профилем в Telegram.
-          </p>
         </div>
       </div>
     </div>
