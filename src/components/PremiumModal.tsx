@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { payWithTelegramStars } from '../api/serverless'
 import { fireConfetti } from '../utils/confetti'
+import { TG_STAR_STICKER_5920433463428650761 } from '../utils/starIcon'
 
 interface PremiumModalProps {
   isOpen: boolean
@@ -22,66 +23,23 @@ interface PremiumModalProps {
 }
 
 /**
- * High-DPI Vector Telegram Star Badge (Pure SVG, no pixelation)
+ * Telegram Premium / Gold Star Sticker (ID: 5920433463428650761)
  */
 export const TelegramStarIcon: React.FC<{ size?: number; className?: string }> = ({
   size = 24,
   className = '',
 }) => {
   return (
-    <svg
+    <img
+      src={TG_STAR_STICKER_5920433463428650761}
+      alt="⭐️"
       width={size}
       height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-    >
-      <defs>
-        <linearGradient id="starGoldBody" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFF2A3" />
-          <stop offset="25%" stopColor="#FFD233" />
-          <stop offset="70%" stopColor="#FF9F0A" />
-          <stop offset="100%" stopColor="#D97706" />
-        </linearGradient>
-        <linearGradient id="starFacetedRight" x1="16" y1="2" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#E58A00" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#9A4500" stopOpacity="0.7" />
-        </linearGradient>
-        <linearGradient id="starGlassGleam" x1="8" y1="4" x2="24" y2="18" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
-          <stop offset="45%" stopColor="#FFF4B8" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.0" />
-        </linearGradient>
-        <radialGradient id="starCoreLight" cx="50%" cy="40%" r="50%">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.8" />
-          <stop offset="50%" stopColor="#FFDE59" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#FFA000" stopOpacity="0" />
-        </radialGradient>
-        <filter id="starBloom" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#FFB800" floodOpacity="0.4" />
-        </filter>
-      </defs>
-
-      <g filter="url(#starBloom)">
-        <path
-          d="M16 2.5L19.8 11.2L29.2 12.3L22.2 18.6L24.1 28L16 23.3L7.9 28L9.8 18.6L2.8 12.3L12.2 11.2L16 2.5Z"
-          fill="url(#starGoldBody)"
-          stroke="#FFE685"
-          strokeWidth="0.8"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M16 2.5V23.3L24.1 28L22.2 18.6L29.2 12.3L19.8 11.2L16 2.5Z"
-          fill="url(#starFacetedRight)"
-        />
-        <path
-          d="M16 3.8L13 11.5L4.5 12.5L10.8 18.2L9.2 26.5L16 22.5V3.8Z"
-          fill="url(#starGlassGleam)"
-        />
-        <circle cx="16" cy="15" r="5" fill="url(#starCoreLight)" />
-      </g>
-    </svg>
+      style={{ width: `${size}px`, height: `${size}px` }}
+      className={`inline-block object-contain pointer-events-none select-none shrink-0 ${className}`}
+      loading="eager"
+      draggable={false}
+    />
   )
 }
 
@@ -159,7 +117,7 @@ export const PremiumModal: React.FC<PremiumModalProps> = ({
         <div className="flex flex-col items-center text-center pt-2 pb-4">
           <div className="relative mb-2.5">
             <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
-              <TelegramStarIcon size={38} />
+              <TelegramStarIcon size={40} />
             </div>
           </div>
 
@@ -293,7 +251,7 @@ export const PremiumModal: React.FC<PremiumModalProps> = ({
                   <Loader2 size={18} className="animate-spin text-black" />
                 ) : (
                   <>
-                    <TelegramStarIcon size={18} />
+                    <TelegramStarIcon size={20} />
                     <span>Активировать за 50 ⭐</span>
                   </>
                 )}

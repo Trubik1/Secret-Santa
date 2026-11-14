@@ -1,6 +1,6 @@
 import React from 'react'
 import { UserProfile } from '../types'
-import { Plus, Share2, Calendar, Camera } from 'lucide-react'
+import { Plus, Share2, Calendar, Palette } from 'lucide-react'
 import { TelegramStarIcon } from './PremiumModal'
 
 interface HeroProfileProps {
@@ -9,7 +9,7 @@ interface HeroProfileProps {
   totalGifts?: number
   onOpenShare: () => void
   onOpenAdd?: () => void
-  onOpenCoverModal?: () => void
+  onOpenCustomization?: () => void
   onOpenPremiumModal?: (reason: 'limit' | 'cover' | 'general') => void
   onHaptic?: () => void
 }
@@ -20,7 +20,7 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
   totalGifts = 0,
   onOpenShare,
   onOpenAdd,
-  onOpenCoverModal,
+  onOpenCustomization,
   onOpenPremiumModal,
   onHaptic,
 }) => {
@@ -53,15 +53,6 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
       return
     }
     onOpenAdd?.()
-  }
-
-  const handleCoverClick = () => {
-    onHaptic?.()
-    if (!profile.isPremium) {
-      onOpenPremiumModal?.('cover')
-      return
-    }
-    onOpenCoverModal?.()
   }
 
   return (
@@ -98,19 +89,13 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
                   <span>Вишлист друга</span>
                 </span>
               )}
-              {profile.isPremium && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  <TelegramStarIcon size={11} />
-                  <span>PRO</span>
-                </span>
-              )}
             </div>
 
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               <h1 className="text-base sm:text-lg font-black tracking-tight text-white truncate flex items-center gap-1.5">
                 <span>{isOwner ? (profile.firstName || 'Мой вишлист') : `Вишлист: ${profile.firstName || 'друга'}`} {isOwner ? (profile.lastName || '') : ''}</span>
                 {profile.isPremium && (
-                  <TelegramStarIcon size={16} className="inline-block shrink-0" />
+                  <TelegramStarIcon size={18} className="inline-block shrink-0 -mt-0.5" />
                 )}
               </h1>
 
@@ -129,18 +114,8 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
             )}
           </div>
 
-          {/* User Avatar + Cover Button + Share Button */}
+          {/* User Avatar & Customization Card + Share Button */}
           <div className="flex items-center gap-2 shrink-0">
-            {isOwner && (
-              <button
-                onClick={handleCoverClick}
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 border border-white/10 cursor-pointer"
-                title={profile.isPremium ? 'Сменить обложку' : 'Разблокировать обложку ⭐'}
-              >
-                <Camera size={15} />
-              </button>
-            )}
-
             <button
               onClick={() => {
                 onHaptic?.()
@@ -152,20 +127,53 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
               <Share2 size={15} />
             </button>
 
-            <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-white/20 bg-zinc-800 flex items-center justify-center shrink-0">
-              {profile.photoUrl && !imgFailed ? (
-                <img
-                  src={profile.photoUrl}
-                  alt={profile.firstName}
-                  className="w-full h-full object-cover"
-                  onError={() => setImgFailed(true)}
-                />
-              ) : (
-                <div className="w-full h-full bg-zinc-700 text-white flex items-center justify-center font-black text-sm select-none">
-                  {initial}
+            {/* Avatar / Customization Button */}
+            {isOwner ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onHaptic?.()
+                  onOpenCustomization?.()
+                }}
+                className="relative group p-0.5 rounded-full transition-transform active:scale-95 cursor-pointer focus:outline-none"
+                title="Оформление и кастомизация вишлиста"
+              >
+                <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-white/25 group-hover:ring-amber-400/60 bg-zinc-800 flex items-center justify-center shrink-0 transition-all shadow-md">
+                  {profile.photoUrl && !imgFailed ? (
+                    <img
+                      src={profile.photoUrl}
+                      alt={profile.firstName}
+                      className="w-full h-full object-cover"
+                      onError={() => setImgFailed(true)}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-zinc-700 text-white flex items-center justify-center font-black text-sm select-none">
+                      {initial}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+
+                {/* Subtle palette badge on avatar */}
+                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#161618] border border-white/20 flex items-center justify-center text-amber-300 shadow-sm">
+                  <Palette size={9} />
+                </div>
+              </button>
+            ) : (
+              <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-white/20 bg-zinc-800 flex items-center justify-center shrink-0">
+                {profile.photoUrl && !imgFailed ? (
+                  <img
+                    src={profile.photoUrl}
+                    alt={profile.firstName}
+                    className="w-full h-full object-cover"
+                    onError={() => setImgFailed(true)}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-zinc-700 text-white flex items-center justify-center font-black text-sm select-none">
+                    {initial}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

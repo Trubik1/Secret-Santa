@@ -25,6 +25,7 @@ import { SecretSantaPage } from './components/SecretSantaPage'
 import { DevToolsBar } from './components/DevToolsBar'
 import { CoverCropModal } from './components/CoverCropModal'
 import { PremiumModal } from './components/PremiumModal'
+import { CustomizationModal } from './components/CustomizationModal'
 import { GroupCollectionCard } from './components/GroupCollectionCard'
 import { DeleteReasonModal } from './components/DeleteReasonModal'
 import { AdminDashboardModal } from './components/AdminDashboardModal'
@@ -200,11 +201,12 @@ export function App() {
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isCoverModalOpen, setIsCoverModalOpen] = useState(false)
+  const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false)
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false)
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false)
   const [premiumReason, setPremiumReason] = useState<'limit' | 'cover' | 'general'>('general')
 
-  const handleSaveCover = async (coverUrl: string) => {
+  const handleSaveCover = async (coverUrl: string | null) => {
     try {
       await serverlessCall('updateProfile', { coverUrl })
       setMyProfile((prev) => (prev ? { ...prev, coverUrl } : null))
@@ -217,7 +219,7 @@ export function App() {
           },
         })
       }
-      showToast('Обложка вишлиста обновлена ✨')
+      showToast(coverUrl ? 'Обложка вишлиста обновлена ✨' : 'Обложка вишлиста сброшена')
       haptics.notification('success')
     } catch (err) {
       console.error(err)
@@ -518,7 +520,7 @@ export function App() {
                   totalGifts={data.gifts.length}
                   onOpenShare={handleShareWishlist}
                   onOpenAdd={handleOpenAddModal}
-                  onOpenCoverModal={() => setIsCoverModalOpen(true)}
+                  onOpenCustomization={() => setIsCustomizationModalOpen(true)}
                   onOpenPremiumModal={(r) => {
                     setPremiumReason(r)
                     setIsPremiumModalOpen(true)
@@ -633,6 +635,7 @@ export function App() {
                   setIsPremiumModalOpen(true)
                 }}
                 onOpenAdminModal={() => setIsAdminModalOpen(true)}
+                onOpenCustomization={() => setIsCustomizationModalOpen(true)}
               />
             )}
           </>
@@ -706,6 +709,24 @@ export function App() {
           user={data.profile}
           giftsCount={data.gifts.length}
           onClose={() => setIsShareModalOpen(false)}
+          onHaptic={() => haptics.impact('light')}
+          onShowToast={showToast}
+        />
+      )}
+
+      {/* Profile & Wishlist Customization Modal */}
+      {(myProfile || data?.profile) && (
+        <CustomizationModal
+          isOpen={isCustomizationModalOpen}
+          onClose={() => setIsCustomizationModalOpen(false)}
+          profile={myProfile || data!.profile}
+          isPremium={isUserPremium}
+          onOpenCoverCropper={() => setIsCoverModalOpen(true)}
+          onSaveCover={handleSaveCover}
+          onOpenPremiumModal={(r) => {
+            setPremiumReason(r || 'cover')
+            setIsPremiumModalOpen(true)
+          }}
           onHaptic={() => haptics.impact('light')}
           onShowToast={showToast}
         />

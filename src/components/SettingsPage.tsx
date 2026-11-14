@@ -12,6 +12,7 @@ import {
   ChevronUp,
   ChevronRight,
   BarChart3,
+  Palette,
 } from 'lucide-react'
 import { TelegramStarIcon } from './PremiumModal'
 
@@ -25,6 +26,7 @@ interface SettingsPageProps {
   onShowToast: (msg: string) => void
   onOpenPremiumModal: () => void
   onOpenAdminModal: () => void
+  onOpenCustomization?: () => void
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
@@ -37,6 +39,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onShowToast,
   onOpenPremiumModal,
   onOpenAdminModal,
+  onOpenCustomization,
 }) => {
   // Event State
   const [hasEvent, setHasEvent] = useState<boolean>(Boolean(profile.eventTitle || profile.eventDate))
@@ -165,6 +168,42 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Action Banner 0: Profile Customization & Cover */}
+      <button
+        type="button"
+        onClick={() => {
+          onHaptic()
+          onOpenCustomization?.()
+        }}
+        className="w-full p-4 rounded-3xl bg-[#161618] hover:bg-[#1a1a1d] border border-white/10 hover:border-white/20 shadow-xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer group text-left"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 shrink-0 group-hover:scale-105 transition-transform">
+            <Palette size={20} />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm font-black text-white tracking-tight">Кастомизация вишлиста</span>
+              {profile.coverUrl ? (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[10px] font-black border border-emerald-500/30">
+                  Обложка есть ✓
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 text-[10px] font-bold">
+                  Обложка и стили
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
+              Обложка профиля, готовые темы и визуальный стиль
+            </p>
+          </div>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-white/10 text-zinc-400 group-hover:text-white flex items-center justify-center shrink-0 ml-2 transition-colors">
+          <ChevronRight size={15} />
+        </div>
+      </button>
 
       {/* Action Banner 1: PRO Account Card / Upgrade Button */}
       {profile.isPremium ? (
