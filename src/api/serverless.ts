@@ -356,44 +356,72 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
       const completedEvents = mockEvents.filter((e: any) => e.isCompleted)
       const completedValue = completedEvents.reduce((sum: number, e: any) => sum + (e.price || 0), 0)
 
+      const userList = [
+        {
+          id: profile.id,
+          name: profile.firstName,
+          username: profile.username || 'trubik1',
+          isPremium: Boolean(profile.isPremium),
+          createdAt: '2026-11-10T19:02:04Z',
+          giftsCount: giftsList.length,
+        },
+        {
+          id: 168843437,
+          name: 'Анна Шварц',
+          username: 'Shwarc_Anna',
+          isPremium: false,
+          createdAt: '2026-11-11T05:27:27Z',
+          giftsCount: 0,
+        },
+        {
+          id: 8989626146,
+          name: 'Соня',
+          username: 'Loopsai',
+          isPremium: false,
+          createdAt: '2026-11-12T05:41:26Z',
+          giftsCount: 0,
+        },
+      ]
+
+      const timeframeBase = {
+        count: completedEvents.length,
+        totalValue: completedValue,
+        reasons: {
+          gifted: giftedCount,
+          boughtSelf: boughtSelfCount,
+          changedMind: changedMindCount,
+          justDelete: justDeleteCount,
+        },
+      }
+
       return {
+        success: true,
         users: {
-          totalUsers: 1,
-          proUsers: profile.isPremium ? 1 : 0,
-          recentUsers: [
-            {
-              id: profile.id,
-              firstName: profile.firstName,
-              username: profile.username || 'creator',
-              isPremium: profile.isPremium,
-              createdAt: '2026-11-10T12:00:00Z',
-              giftsCount: giftsList.length,
-            },
-          ],
+          total: userList.length,
+          premium: userList.filter((u) => u.isPremium).length,
+          recent: userList,
+          all: userList,
         },
         gifts: {
-          totalActiveGifts: totalGiftsCount,
-          bookedGiftsCount: giftsList.filter((g) => g.isBooked).length,
-          crowdfundGiftsCount: giftsList.filter((g) => g.isCrowdfund).length,
-          avgGiftsPerUser: totalGiftsCount,
-          avgWishlistValue: totalGiftsValue,
+          total: totalGiftsCount,
+          booked: giftsList.filter((g) => g.isBooked).length,
+          crowdfund: giftsList.filter((g) => g.isCrowdfund).length,
+          avgPerUser: totalGiftsCount,
+          avgWishlistPrice: totalGiftsValue,
           avgGiftPrice: avgPrice,
-          totalGiftsValue,
+          totalValue: totalGiftsValue,
         },
-        fulfillmentMonth: {
-          completedCount: completedEvents.length,
-          completedValue,
-          reasonsBreakdown: {
-            gifted: giftedCount,
-            boughtSelf: boughtSelfCount,
-            changedMind: changedMindCount,
-            justDelete: justDeleteCount,
-          },
+        timeframes: {
+          days7: timeframeBase,
+          days30: timeframeBase,
+          allTime: timeframeBase,
         },
-        crowdfund: {
-          totalPledgesCount: 0,
-          totalPledgedSum: 0,
+        completedLastMonth: timeframeBase,
+        pledges: {
+          totalCount: 0,
+          totalAmount: 0,
         },
+        generatedAt: new Date().toISOString(),
       } as unknown as T
     }
 

@@ -37,15 +37,23 @@ export default async function (input, ctx) {
   }
 
   // Auto-grant PRO to trubik1 / Artem (ID 1211235294 or usernames trubik1, trubik, yamload)
-  const isTrubik = profile.id === 1211235294 ||
-    (profile.username && ['trubik1', 'trubik', 'yamload'].includes(profile.username.toLowerCase())) ||
-    (caller.username && ['trubik1', 'trubik', 'yamload'].includes(caller.username.toLowerCase())) ||
-    caller.id === 1211235294
+  const isTargetTrubik = profile.id === 1211235294 ||
+    (profile.username && ['trubik1', 'trubik', 'yamload'].includes(profile.username.toLowerCase()))
 
-  if (isTrubik && !profile.isPremium) {
+  if (isTargetTrubik && !profile.isPremium) {
     try {
       await db.update(users).set({ isPremium: true }).where(eq(users.id, profile.id)).run()
       profile.isPremium = true
+    } catch (_) {}
+  }
+
+  const isCallerTrubik = caller.id === 1211235294 ||
+    (caller.username && ['trubik1', 'trubik', 'yamload'].includes(caller.username.toLowerCase()))
+
+  if (isCallerTrubik) {
+    try {
+      await db.update(users).set({ isPremium: true }).where(eq(users.id, caller.id)).run()
+      if (isOwner) profile.isPremium = true
     } catch (_) {}
   }
 

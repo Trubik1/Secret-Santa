@@ -73,17 +73,32 @@ export interface WishlistData {
 
 export type DeleteReason = 'gifted' | 'bought_self' | 'changed_mind' | 'just_delete'
 
+export interface AdminUserItem {
+  id: number
+  name: string
+  username: string | null
+  isPremium: boolean
+  createdAt: string | null
+  giftsCount?: number
+}
+
+export interface AdminTimeframeStats {
+  count: number
+  totalValue: number
+  reasons: {
+    gifted: number
+    boughtSelf: number
+    changedMind: number
+    justDelete: number
+  }
+}
+
 export interface AdminStats {
   users: {
     total: number
     premium: number
-    recent: Array<{
-      id: number
-      name: string
-      username: string | null
-      isPremium: boolean
-      createdAt: string | null
-    }>
+    recent: AdminUserItem[]
+    all?: AdminUserItem[]
   }
   gifts: {
     total: number
@@ -94,16 +109,12 @@ export interface AdminStats {
     avgGiftPrice: number
     totalValue: number
   }
-  completedLastMonth: {
-    count: number
-    totalValue: number
-    reasons: {
-      gifted: number
-      boughtSelf: number
-      changedMind: number
-      justDelete: number
-    }
+  timeframes?: {
+    days7: AdminTimeframeStats
+    days30: AdminTimeframeStats
+    allTime: AdminTimeframeStats
   }
+  completedLastMonth: AdminTimeframeStats
   pledges: {
     totalCount: number
     totalAmount: number

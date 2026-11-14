@@ -15,22 +15,10 @@ export default async function (input, ctx) {
     throw new EndpointError('Доступ запрещён: требуются права администратора', { code: 'FORBIDDEN' })
   }
 
-  // 1. Users metrics
+  // 1. Users metrics & all gifts
   const allUsers = await db.select().from(users).all()
   const totalUsers = allUsers.length
   const premiumUsersCount = allUsers.filter(u => u.isPremium).length
-
-  // Recent 10 users
-  const recentUsers = [...allUsers]
-    .sort((a, b) => (new Date(b.createdAt || 0).getTime()) - (new Date(a.createdAt || 0).getTime()))
-    .slice(0, 10)
-    .map(u => ({
-      id: u.id,
-      name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.firstName || 'Пользователь',
-      username: u.username || null,
-      isPremium: Boolean(u.isPremium),
-      createdAt: u.createdAt || null,
-    }))
 
   // 2. Gifts metrics
   const allGifts = await db.select().from(gifts).all()
@@ -43,7 +31,21 @@ export default async function (input, ctx) {
   const avgWishlistPrice = totalUsers > 0 ? Math.round(totalGiftsValue / totalUsers) : 0
   const avgGiftPrice = totalGifts > 0 ? Math.round(totalGiftsValue / totalGifts) : 0
 
-  // 3. Completed & Deleted Events metrics (last 30 days)
+  // Map all users with gifts count
+  const allMappedUsers = [...allUsers]
+    .sort((a, b) => (new Date(b.createdAt || 0).getTime()) - (new Date(a.createdAt || 0).getTime()))
+    .map(u => ({
+      id: u.id,
+      name: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.firstName || 'Пользователь',
+      username: u.username || null,
+      isPremium: Boolean(u.isPremium),
+      createdAt: u.createdAt || null,
+      giftsCount: allGifts.filter(g => g.userId === u.id).length,
+    }))
+
+  const recentUsers = allMappedUsers.slice(0, 10)
+
+  // 3. Completed & Deleted Events metrics
   let allEvents = []
   try {
     allEvents = await db.select().from(giftEventsLog).all()
@@ -51,24 +53,33 @@ export default async function (input, ctx) {
     console.warn('Could not read giftEventsLog:', err)
   }
 
-  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
-  const recentEvents = allEvents.filter(e => {
-    if (!e.createdAt) return true
-    const t = new Date(e.createdAt).getTime()
-    return isNaN(t) || t >= thirtyDaysAgo
-  })
+  function calculateTimeframeStats(events, cutoffTime) {
+    const filtered = cutoffTime
+      ? events.filter(e => {
+          if (!e.createdAt) return true
+          const t = new Date(e.createdAt).getTime()
+          return isNaN(t) || t >= cutoffTime
+        })
+      : events
 
-  const completedLastMonth = recentEvents.filter(e => e.eventType === 'completed')
-  const completedCount = completedLastMonth.length
-  const completedTotalValue = completedLastMonth.reduce((sum, e) => sum + (e.giftPrice || 0), 0)
+    const completed = filtered.filter(e => e.eventType === 'completed')
+    const count = completed.length
+    const totalValue = completed.reduce((sum, e) => sum + (e.giftPrice || 0), 0)
 
-  // Breakdown by reasons
-  const reasonBreakdown = {
-    gifted: recentEvents.filter(e => e.reason === 'gifted').length,
-    boughtSelf: recentEvents.filter(e => e.reason === 'bought_self').length,
-    changedMind: recentEvents.filter(e => e.reason === 'changed_mind').length,
-    justDelete: recentEvents.filter(e => e.reason === 'just_delete').length,
+    const reasons = {
+      gifted: filtered.filter(e => e.reason === 'gifted').length,
+      boughtSelf: filtered.filter(e => e.reason === 'bought_self').length,
+      changedMind: filtered.filter(e => e.reason === 'changed_mind').length,
+      justDelete: filtered.filter(e => e.reason === 'just_delete').length,
+    }
+
+    return { count, totalValue, reasons }
   }
+
+  const now = Date.now()
+  const days7Stats = calculateTimeframeStats(allEvents, now - 7 * 24 * 60 * 60 * 1000)
+  const days30Stats = calculateTimeframeStats(allEvents, now - 30 * 24 * 60 * 60 * 1000)
+  const allTimeStats = calculateTimeframeStats(allEvents, null)
 
   // 4. Crowdfund pledges total
   let allPledges = []
@@ -83,6 +94,7 @@ export default async function (input, ctx) {
       total: totalUsers,
       premium: premiumUsersCount,
       recent: recentUsers,
+      all: allMappedUsers,
     },
     gifts: {
       total: totalGifts,
@@ -93,11 +105,12 @@ export default async function (input, ctx) {
       avgGiftPrice,
       totalValue: totalGiftsValue,
     },
-    completedLastMonth: {
-      count: completedCount,
-      totalValue: completedTotalValue,
-      reasons: reasonBreakdown,
+    timeframes: {
+      days7: days7Stats,
+      days30: days30Stats,
+      allTime: allTimeStats,
     },
+    completedLastMonth: days30Stats,
     pledges: {
       totalCount: allPledges.length,
       totalAmount: totalPledgedSum,
