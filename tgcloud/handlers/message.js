@@ -69,8 +69,7 @@ export default async function (message, ctx) {
           inline_keyboard: [
             [
               {
-                text: '🎁 Открыть вишлист',
-                icon_custom_emoji_id: '6032937473162614352',
+                text: 'Открыть миниап',
                 web_app: { url: appBaseUrl }
               }
             ]
@@ -89,8 +88,7 @@ export default async function (message, ctx) {
         inline_keyboard: [
           [
             {
-              text: 'Открыть вишлист',
-              icon_custom_emoji_id: '6032937473162614352',
+              text: 'Открыть миниап',
               web_app: { url: appBaseUrl }
             }
           ]
@@ -119,15 +117,13 @@ export default async function (message, ctx) {
 
         await api.sendMessage({
           chat_id: chatId,
-          text: `<tg-emoji emoji-id="6032937473162614352">🎁</tg-emoji> Вишлист <b>${ownerName}</b>\n\n` +
-                `Выбирай, что подарить, бронируй подарок в один клик или скидывайся вместе с компанией друзей.`,
+          text: `Вишлист <b>${ownerName}</b> ✨\n\nВыбирай, что подарить, бронируй подарок в один клик или скидывайся вместе с друзьями.`,
           parse_mode: 'HTML',
           reply_markup: {
             inline_keyboard: [
               [
                 {
-                  text: `Открыть список ${ownerName}`,
-                  icon_custom_emoji_id: '5958376256788502078',
+                  text: 'Открыть миниап',
                   web_app: {
                     url: `${appBaseUrl}?start_param=wish_${targetUserId}`,
                   },
@@ -141,19 +137,13 @@ export default async function (message, ctx) {
     }
 
     // 2. Owner opened bot: /start
-    const shareLink = `https://t.me/${botUsername}?start=wish_${fromUser.id}`
-    const rawName = (fromUser.first_name || '').trim()
-    const displayName = (rawName && rawName !== '•' && rawName !== '.')
-      ? rawName
-      : (fromUser.username ? `@${fromUser.username}` : 'друг')
-
     // Set persistent bottom-left chat menu button
     try {
       await api.setChatMenuButton({
         chat_id: chatId,
         menu_button: {
           type: 'web_app',
-          text: '🎁 Вишлист',
+          text: 'Вишлист',
           web_app: {
             url: appBaseUrl,
           },
@@ -163,26 +153,16 @@ export default async function (message, ctx) {
 
     await api.sendMessage({
       chat_id: chatId,
-      text: `Привет, <b>${displayName}</b>! <tg-emoji emoji-id="5958376256788502078">✨</tg-emoji>\n\n` +
-            `Здесь твой персональный вишлист. Добавляй товары прямо по ссылкам с Wildberries или Ozon, а друзья смогут их бронировать или скидываться.\n\n` +
-            `<tg-emoji emoji-id="5440410042773824003">🔗</tg-emoji> <b>Твоя ссылка для друзей:</b>\n<code>${shareLink}</code>`,
+      text: `Создай свой собственный вишлист или посмотри вишлист друга ✨`,
       parse_mode: 'HTML',
       reply_markup: {
         inline_keyboard: [
           [
             {
-              text: 'Открыть вишлист',
-              icon_custom_emoji_id: '6032937473162614352',
+              text: 'Открыть миниап',
               web_app: {
                 url: appBaseUrl,
               },
-            }
-          ],
-          [
-            {
-              text: 'Отправить друзьям',
-              icon_custom_emoji_id: '5440410042773824003',
-              url: `https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(`Мой вишлист 🎁 ➔ ${shareLink}`)}`,
             }
           ]
         ]
@@ -192,17 +172,15 @@ export default async function (message, ctx) {
   }
 
   // Handle /help or any other text
-  const shareLink = `https://t.me/${botUsername}?start=wish_${fromUser.id}`
   await api.sendMessage({
     chat_id: chatId,
-    text: `<tg-emoji emoji-id="6032937473162614352">🎁</tg-emoji> Нажми кнопку ниже, чтобы открыть свой вишлист, добавить подарки или посмотреть списки друзей:`,
+    text: `Создай свой собственный вишлист или посмотри вишлист друга ✨`,
     parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [
         [
           {
-            text: 'Открыть вишлист',
-            icon_custom_emoji_id: '6032937473162614352',
+            text: 'Открыть миниап',
             web_app: {
               url: appBaseUrl,
             },
