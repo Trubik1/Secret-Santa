@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Gift, Priority } from '../types'
 import { X, Search, Loader2, Check, AlertCircle, Lock, Unlock } from 'lucide-react'
+import { LiquidRadarLoader } from './LiquidRadarLoader'
 import {
   CurrencyMode,
   getCurrencySymbol,
@@ -203,20 +204,31 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
                 disabled={isParsing || !url.trim()}
                 className="px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-black active:scale-95 disabled:opacity-40 transition-all flex items-center gap-1.5 shrink-0 shadow-md"
               >
-                {isParsing ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
+                {isParsing ? <Loader2 size={15} className="animate-spin text-[#c4457b]" /> : <Search size={15} />}
                 <span>Найти</span>
               </button>
             </div>
 
+            {/* Fusion Loading Animation (Young Walrus + Pink Deer) */}
+            {isParsing && (
+              <div className="mt-3 p-3 rounded-2xl bg-zinc-900/90 border border-[#c4457b]/30 shadow-[0_8px_32px_0_rgba(196,69,123,0.15)] backdrop-blur-xl animate-apple-spring">
+                <LiquidRadarLoader
+                  size="sm"
+                  title="Поиск товара по ссылке"
+                  subtitle="Это может занять немного времени"
+                />
+              </div>
+            )}
+
             {/* Parse Feedback Status */}
             {parseSuccess && (
-              <p className="mt-1.5 text-[11px] font-bold text-emerald-400 flex items-center gap-1">
-                <Check size={12} /> Данные товара успешно распознаны!
+              <p className="mt-2 text-[11px] font-bold text-emerald-400 flex items-center gap-1 animate-fadeIn">
+                <Check size={13} className="shrink-0" /> Данные товара успешно распознаны!
               </p>
             )}
             {parseError && (
-              <p className="mt-1.5 text-[11px] font-semibold text-amber-400 flex items-center gap-1">
-                <AlertCircle size={12} /> {parseError}
+              <p className="mt-2 text-[11px] font-semibold text-amber-400 flex items-center gap-1 animate-fadeIn">
+                <AlertCircle size={13} className="shrink-0" /> {parseError}
               </p>
             )}
           </div>

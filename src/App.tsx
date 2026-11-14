@@ -29,6 +29,7 @@ import { CustomizationModal } from './components/CustomizationModal'
 import { GroupCollectionCard } from './components/GroupCollectionCard'
 import { DeleteReasonModal } from './components/DeleteReasonModal'
 import { AdminDashboardModal } from './components/AdminDashboardModal'
+import { LiquidRadarLoader } from './components/LiquidRadarLoader'
 import { Plus, CheckCircle2 } from 'lucide-react'
 
 function extractStartParam(): string | null {
@@ -617,15 +618,13 @@ export function App() {
         onTouchEnd={handleTouchEnd}
       >
         {loading && !data ? (
-          /* Minimalist Monochrome Loader */
-          <div className="flex flex-col items-center justify-center min-h-[65vh] gap-4">
-            <div className="relative w-12 h-12 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-2 border-white/10 border-t-white animate-spin" />
-              <span className="text-sm font-black text-white relative z-10">🎁</span>
-            </div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-              Загрузка вишлиста...
-            </p>
+          /* Fusion Loader (young-walrus-64 + pink-deer-76) */
+          <div className="flex flex-col items-center justify-center min-h-[65vh]">
+            <LiquidRadarLoader
+              size="lg"
+              title="Загрузка вишлиста"
+              subtitle="Синхронизация с сервером..."
+            />
           </div>
         ) : (
           <div

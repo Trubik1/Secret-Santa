@@ -134,6 +134,15 @@ function isHostAllowed(hostname) {
   return ALLOWED_MARKETPLACE_HOSTS.some(allowed => host === allowed || host.endsWith('.' + allowed))
 }
 
+function createTimeoutSignal(ms) {
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(ms)
+  }
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(new Error('Timeout')), ms)
+  return controller.signal
+}
+
 /**
  * Main parser entry point.
  */
@@ -177,60 +186,75 @@ export async function parseProductUrl(targetUrl) {
       const part = Math.floor(nmId / 1000)
 
       const targetBasket = getWbBasketNumber(vol)
-      const candidates = [targetBasket, targetBasket - 1, targetBasket + 1].filter((n) => n >= 1 && n <= 50)
+      const candidateNums = [
+        targetBasket,
+        targetBasket - 1, targetBasket + 1,
+        targetBasket - 2, targetBasket + 2,
+        targetBasket - 3, targetBasket + 3,
+        targetBasket - 4, targetBasket + 4,
+      ].filter((n) => n >= 1 && n <= 45)
+      const uniqueCandidates = [...new Set(candidateNums)]
 
-      for (const c of candidates) {
-        const num = String(c).padStart(2, '0')
-        const cardUrl = `https://basket-${num}.wbbasket.ru/vol${vol}/part${part}/${nmId}/info/ru/card.json`
-        try {
-          const cardRes = await fetch(cardUrl)
-          if (cardRes.ok) {
+      try {
+        const checks = uniqueCandidates.map((c) => {
+          const num = String(c).padStart(2, '0')
+          const cardUrl = `https://basket-${num}.wbbasket.ru/vol${vol}/part${part}/${nmId}/info/ru/card.json`
+          return fetch(cardUrl, { signal: createTimeoutSignal(3500) }).then(async (cardRes) => {
+            if (!cardRes.ok) throw new Error('Not ok')
             const card = await cardRes.json()
-            let price = 0
-            try {
-              const prRes = await fetch(`https://basket-${num}.wbbasket.ru/vol${vol}/part${part}/${nmId}/info/price-history.json`)
-              if (prRes.ok) {
-                const prData = await prRes.json()
-                const lastPr = prData[prData.length - 1]
-                if (lastPr?.price?.RUB) {
-                  price = Math.round(lastPr.price.RUB / 100)
-                }
-              }
-            } catch (_) {}
+            return { num, card }
+          })
+        })
 
-            const imageUrl = `https://basket-${num}.wbbasket.ru/vol${vol}/part${part}/${nmId}/images/big/1.webp`
-            const title = card.imt_name || card.subj_name || 'Товар Wildberries'
+        const { num, card } = await Promise.any(checks)
 
-            // Category mapping
-            const catName = (card.subj_root_name || card.subj_name || '').toLowerCase()
-            let categoryId = 'other'
-            if (catName.includes('электрон') || catName.includes('бытов') || catName.includes('смарт') || catName.includes('гаджет') || catName.includes('компьютер')) {
-              categoryId = 'gadgets'
-            } else if (catName.includes('одежд') || catName.includes('обув') || catName.includes('аксессуар') || catName.includes('бель')) {
-              categoryId = 'clothes'
-            } else if (catName.includes('дом') || catName.includes('интерьер') || catName.includes('мебель') || catName.includes('кухн') || catName.includes('посуд')) {
-              categoryId = 'home'
-            } else if (catName.includes('книг') || catName.includes('канц')) {
-              categoryId = 'books'
-            }
-
-            return {
-              title,
-              imageUrl,
-              price,
-              categoryId,
-              url: cleanUrl,
-              parsed: true,
+        let price = 0
+        try {
+          const prRes = await fetch(
+            `https://basket-${num}.wbbasket.ru/vol${vol}/part${part}/${nmId}/info/price-history.json`,
+            { signal: createTimeoutSignal(1800) }
+          )
+          if (prRes.ok) {
+            const prData = await prRes.json()
+            const lastPr = prData[prData.length - 1]
+            if (lastPr?.price?.RUB) {
+              price = Math.round(lastPr.price.RUB / 100)
             }
           }
         } catch (_) {}
-      }
+
+        const imageUrl = `https://basket-${num}.wbbasket.ru/vol${vol}/part${part}/${nmId}/images/big/1.webp`
+        const title = card.imt_name || card.subj_name || 'Товар Wildberries'
+
+        // Category mapping
+        const catName = (card.subj_root_name || card.subj_name || '').toLowerCase()
+        let categoryId = 'other'
+        if (catName.includes('электрон') || catName.includes('бытов') || catName.includes('смарт') || catName.includes('гаджет') || catName.includes('компьютер')) {
+          categoryId = 'gadgets'
+        } else if (catName.includes('одежд') || catName.includes('обув') || catName.includes('аксессуар') || catName.includes('бель')) {
+          categoryId = 'clothes'
+        } else if (catName.includes('дом') || catName.includes('интерьер') || catName.includes('мебель') || catName.includes('кухн') || catName.includes('посуд')) {
+          categoryId = 'home'
+        } else if (catName.includes('книг') || catName.includes('канц')) {
+          categoryId = 'books'
+        }
+
+        return {
+          title,
+          imageUrl,
+          price,
+          categoryId,
+          url: cleanUrl,
+          parsed: true,
+        }
+      } catch (_) {}
     }
 
     // 2. Generic Fetch + OpenGraph parsing (Ozon, other stores)
     const response = await fetch(cleanUrl, {
+      signal: createTimeoutSignal(4000),
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 (TelegramBot/1.0; +https://telegram.org)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 (TelegramBot/1.0; +https://telegram.org)',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
       }
@@ -252,7 +276,7 @@ export async function parseProductUrl(targetUrl) {
       parsed: parsed.parsed,
     }
   } catch (err) {
-    console.warn('URL parsing failed:', err)
+    console.error('URL parsing failed:', err)
     return fallback
   }
 }
