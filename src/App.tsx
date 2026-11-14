@@ -60,6 +60,9 @@ export function App() {
     user,
     startParam,
     isInsideTelegram,
+    isFullscreen,
+    canFullscreen,
+    toggleFullscreen,
     haptics,
     openTelegramLink,
     openLink,
@@ -415,7 +418,7 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white flex flex-col font-sans selection:bg-zinc-800 selection:text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#000000] text-white flex flex-col font-sans selection:bg-zinc-800 selection:text-white overflow-x-hidden safe-top">
       {/* Dev Tools Bar in standalone browser only */}
       {!isTelegramServerlessAvailable() && !isInsideTelegram && (
         <DevToolsBar
@@ -425,8 +428,8 @@ export function App() {
         />
       )}
 
-      {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-md mx-auto pb-28 px-3">
+      {/* Main Content Area: Responsive Widescreen Desktop & Smartphone */}
+      <main className="flex-1 w-full max-w-md sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pb-28 px-3 sm:px-6 transition-all duration-300">
         {loading && !data ? (
           /* Minimalist Monochrome Loader */
           <div className="flex flex-col items-center justify-center min-h-[65vh] gap-4">
@@ -484,6 +487,9 @@ export function App() {
                     setIsPremiumModalOpen(true)
                   }}
                   onHaptic={() => haptics.impact('light')}
+                  canFullscreen={canFullscreen}
+                  isFullscreen={isFullscreen}
+                  onToggleFullscreen={toggleFullscreen}
                 />
 
                 {/* Catalog Header */}
@@ -495,10 +501,10 @@ export function App() {
                   </span>
                 </div>
 
-                {/* 2-COLUMN MINIMALIST GRID WITH LARGE CARDS (STUDIO DESIGN) */}
+                {/* ADAPTIVE RESPONSIVE GRID (2 cols on Phone, 3-5 cols on Desktop) */}
                 <div className="mt-1">
                   {giftsFeed.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3.5">
                       {giftsFeed.map((gift) => {
                         const isGroupCollection = !isEffectiveOwner && (gift.totalPledged || 0) > 0
                         if (isGroupCollection) {

@@ -31,7 +31,7 @@ export const GroupCollectionCard: React.FC<GroupCollectionCardProps> = ({
         onHaptic?.()
         onSelect(gift)
       }}
-      className="col-span-2 group cursor-pointer rounded-3xl bg-gradient-to-b from-[#1d1d21] to-[#151517] border border-white/15 p-4 sm:p-5 shadow-2xl relative overflow-hidden select-none active:scale-[0.99] transition-all hover:border-white/30"
+      className="col-span-full group cursor-pointer rounded-3xl bg-gradient-to-b from-[#1d1d21] to-[#151517] border border-white/15 p-4 sm:p-5 shadow-2xl relative overflow-hidden select-none active:scale-[0.99] transition-all hover:border-white/30"
     >
       {/* Subtle ambient glow in background */}
       <div className={`absolute -right-10 -top-10 w-44 h-44 rounded-full blur-3xl pointer-events-none ${

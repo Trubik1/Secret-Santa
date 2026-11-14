@@ -1,6 +1,7 @@
 import React from 'react'
 import { UserProfile } from '../types'
-import { Plus, Share2, Calendar, Camera } from 'lucide-react'
+import { Plus, Share2, Calendar, Camera, Maximize2, Minimize2 } from 'lucide-react'
+import { TelegramStarIcon } from './PremiumModal'
 
 interface HeroProfileProps {
   profile: UserProfile
@@ -11,6 +12,9 @@ interface HeroProfileProps {
   onOpenCoverModal?: () => void
   onOpenPremiumModal?: (reason: 'limit' | 'cover' | 'general') => void
   onHaptic?: () => void
+  canFullscreen?: boolean
+  isFullscreen?: boolean
+  onToggleFullscreen?: () => void
 }
 
 export const HeroProfile: React.FC<HeroProfileProps> = ({
@@ -22,6 +26,9 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
   onOpenCoverModal,
   onOpenPremiumModal,
   onHaptic,
+  canFullscreen,
+  isFullscreen,
+  onToggleFullscreen,
 }) => {
   const [imgFailed, setImgFailed] = React.useState(false)
   const initial = (profile.firstName || 'А')[0].toUpperCase()
@@ -99,8 +106,8 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
               )}
               {profile.isPremium && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  <img src="/icons/nav/star.png" alt="Star" className="w-2.5 h-2.5 object-contain" />
-                  <span>PREMIUM</span>
+                  <TelegramStarIcon size={11} />
+                  <span>PRO</span>
                 </span>
               )}
             </div>
@@ -109,7 +116,7 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
               <h1 className="text-base sm:text-lg font-black tracking-tight text-white truncate flex items-center gap-1.5">
                 <span>{isOwner ? (profile.firstName || 'Мой вишлист') : `Вишлист: ${profile.firstName || 'друга'}`} {isOwner ? (profile.lastName || '') : ''}</span>
                 {profile.isPremium && (
-                  <img src="/icons/nav/star.png" alt="Star" className="w-4 h-4 object-contain inline-block shrink-0" />
+                  <TelegramStarIcon size={16} className="inline-block shrink-0" />
                 )}
               </h1>
 
@@ -128,12 +135,25 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
             )}
           </div>
 
-          {/* User Avatar + Cover Button + Share Button */}
+          {/* User Avatar + Cover Button + Share Button + Fullscreen Toggle */}
           <div className="flex items-center gap-2 shrink-0">
+            {canFullscreen && (
+              <button
+                onClick={() => {
+                  onHaptic?.()
+                  onToggleFullscreen?.()
+                }}
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 border border-white/10 cursor-pointer"
+                title={isFullscreen ? 'Свернуть окно' : 'На весь экран'}
+              >
+                {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+              </button>
+            )}
+
             {isOwner && (
               <button
                 onClick={handleCoverClick}
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 border border-white/10"
+                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 border border-white/10 cursor-pointer"
                 title={profile.isPremium ? 'Сменить обложку' : 'Разблокировать обложку ⭐'}
               >
                 <Camera size={15} />
@@ -145,7 +165,7 @@ export const HeroProfile: React.FC<HeroProfileProps> = ({
                 onHaptic?.()
                 onOpenShare()
               }}
-              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 border border-white/10"
+              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white flex items-center justify-center transition-colors active:scale-95 border border-white/10 cursor-pointer"
               title="Поделиться вишлистом"
             >
               <Share2 size={15} />
