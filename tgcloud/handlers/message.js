@@ -68,7 +68,7 @@ export default async function (message, ctx) {
           inline_keyboard: [
             [
               {
-                text: 'Открыть миниап',
+                text: '🎁 Открыть вишлист',
                 web_app: { url: appBaseUrl }
               }
             ]
@@ -87,7 +87,7 @@ export default async function (message, ctx) {
         inline_keyboard: [
           [
             {
-              text: 'Открыть миниап',
+              text: '🎁 Открыть вишлист',
               web_app: { url: appBaseUrl }
             }
           ]
@@ -116,13 +116,13 @@ export default async function (message, ctx) {
 
         await api.sendMessage({
           chat_id: chatId,
-          text: `Вишлист <b>${ownerName}</b> ✨\n\nВыбирай, что подарить, бронируй подарок в один клик или скидывайся вместе с друзьями.`,
+          text: `🎁 Вишлист <b>${ownerName}</b> ✨\n\nВыбирай, что подарить, бронируй подарок в один клик или скидывайся вместе с друзьями!`,
           parse_mode: 'HTML',
           reply_markup: {
             inline_keyboard: [
               [
                 {
-                  text: 'Открыть миниап',
+                  text: '🎁 Открыть вишлист',
                   web_app: {
                     url: `${appBaseUrl}?start_param=wish_${targetUserId}`,
                   },
@@ -142,7 +142,7 @@ export default async function (message, ctx) {
         chat_id: chatId,
         menu_button: {
           type: 'web_app',
-          text: 'Вишлист',
+          text: '🎁 Вишлист',
           web_app: {
             url: appBaseUrl,
           },
@@ -152,13 +152,18 @@ export default async function (message, ctx) {
 
     await api.sendMessage({
       chat_id: chatId,
-      text: `Создай свой собственный вишлист или посмотри вишлист друга ✨`,
+      text: `<b>Привет!</b> 🎁 Добро пожаловать в <b>Giftly</b> — твой персональный вишлист.\n\n` +
+            `Здесь ты можешь:\n` +
+            `• Сохранять подарки по ссылкам с <b>Wildberries</b>, <b>Ozon</b>, <b>Onlíner</b>, <b>AliExpress</b> и других магазинов\n` +
+            `• Делиться списком с друзьями, чтобы получать только желанные подарки\n` +
+            `• Бронировать подарки друзей в один клик и скидываться вместе\n\n` +
+            `Нажми кнопку ниже, чтобы открыть вишлист ✨`,
       parse_mode: 'HTML',
       reply_markup: {
         inline_keyboard: [
           [
             {
-              text: 'Открыть миниап',
+              text: '🎁 Открыть вишлист',
               web_app: {
                 url: appBaseUrl,
               },
@@ -173,13 +178,14 @@ export default async function (message, ctx) {
   // Handle /help or any other text
   await api.sendMessage({
     chat_id: chatId,
-    text: `Создай свой собственный вишлист или посмотри вишлист друга ✨`,
+    text: `<b>Giftly</b> — сервис персональных списков желаний 🎁\n\n` +
+          `Нажми кнопку ниже, чтобы открыть вишлист:`,
     parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [
         [
           {
-            text: 'Открыть миниап',
+            text: '🎁 Открыть вишлист',
             web_app: {
               url: appBaseUrl,
             },

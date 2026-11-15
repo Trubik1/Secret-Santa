@@ -20,6 +20,23 @@ interface GiftDetailModalProps {
   onHaptic?: () => void
 }
 
+function getMarketplaceLabel(url: string): string {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    if (host.includes('wildberries') || host.includes('wb.ru')) return 'Открыть на Wildberries'
+    if (host.includes('ozon')) return 'Открыть на Ozon'
+    if (host.includes('market.yandex') || host.includes('yandex')) return 'Открыть на Яндекс Маркете'
+    if (host.includes('onliner.by')) return 'Открыть на Onlíner'
+    if (host.includes('aliexpress')) return 'Открыть на AliExpress'
+    if (host.includes('goldapple')) return 'Открыть в Золотом Яблоке'
+    if (host.includes('megamarket')) return 'Открыть на Мегамаркете'
+    if (host.includes('dns-shop')) return 'Открыть в DNS'
+    return 'Открыть в магазине'
+  } catch (_) {
+    return 'Открыть в магазине'
+  }
+}
+
 export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
   gift,
   isOwner,
@@ -186,7 +203,7 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
           >
             <span className="flex items-center gap-2 truncate">
               <ExternalLink size={15} className="text-zinc-400 shrink-0" />
-              <span className="truncate">Открыть в магазине (Wildberries / Ozon)</span>
+              <span className="truncate">{getMarketplaceLabel(gift.url)}</span>
             </span>
             <span className="text-zinc-400 text-sm ml-2">↗</span>
           </button>

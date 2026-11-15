@@ -905,6 +905,7 @@ export function App() {
           onClose={() => setIsShareModalOpen(false)}
           onHaptic={() => haptics.impact('light')}
           onShowToast={showToast}
+          onOpenTelegramLink={openTelegramLink}
         />
       )}
 

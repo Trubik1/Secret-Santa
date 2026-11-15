@@ -9,6 +9,7 @@ interface ShareModalProps {
   onClose: () => void
   onHaptic: () => void
   onShowToast: (msg: string) => void
+  onOpenTelegramLink?: (url: string) => void
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({
@@ -18,6 +19,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   onClose,
   onHaptic,
   onShowToast,
+  onOpenTelegramLink,
 }) => {
   const [copied, setCopied] = useState(false)
 
@@ -51,9 +53,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const handleTelegramShare = () => {
     onHaptic()
     const tgUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(
-      'Мой вишлист 🎁'
+      'Мой вишлист 🎁 ➔'
     )}`
-    window.open(tgUrl, '_blank')
+    if (onOpenTelegramLink) {
+      onOpenTelegramLink(tgUrl)
+    } else if (typeof window !== 'undefined' && window.Telegram?.WebApp?.openTelegramLink) {
+      try {
+        window.Telegram.WebApp.openTelegramLink(tgUrl)
+      } catch (_) {
+        window.open(tgUrl, '_blank')
+      }
+    } else {
+      window.open(tgUrl, '_blank')
+    }
   }
 
   const initial = (user.firstName || 'А')[0].toUpperCase()

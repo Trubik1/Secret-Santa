@@ -49,8 +49,27 @@ export default async function (input, ctx) {
   }
 
   const categoryId = input.categoryId !== undefined ? input.categoryId.trim().slice(0, 50) : existing.categoryId
-  const url = input.url !== undefined ? (input.url ? input.url.trim().slice(0, 1000) : null) : existing.url
-  const imageUrl = input.imageUrl !== undefined ? (input.imageUrl ? input.imageUrl.trim().slice(0, 1000) : null) : existing.imageUrl
+
+  let url = existing.url
+  if (input.url !== undefined) {
+    if (input.url) {
+      const trimmedUrl = input.url.trim().slice(0, 1000)
+      url = /^https?:\/\//i.test(trimmedUrl) ? trimmedUrl : null
+    } else {
+      url = null
+    }
+  }
+
+  let imageUrl = existing.imageUrl
+  if (input.imageUrl !== undefined) {
+    if (input.imageUrl) {
+      const trimmedImg = input.imageUrl.trim().slice(0, 1000)
+      imageUrl = (/^https?:\/\//i.test(trimmedImg) || trimmedImg.startsWith('data:image/')) ? trimmedImg : null
+    } else {
+      imageUrl = null
+    }
+  }
+
   const description = input.description !== undefined ? (input.description ? input.description.trim().slice(0, 1000) : null) : existing.description
 
   // If pinning this gift, unpin other gifts for this user
