@@ -128,73 +128,196 @@ body.dark .glass-active-tab,
 }
 
 /* ============================================================ */
-/* FUSION LOADER KEYFRAMES (young-walrus-64 + pink-deer-76)     */
+/* EXACT PINK-DEER-76 LOADER (Dark Theme)                      */
+/* Source: https://uiverse.io/mobinkakei/pink-deer-76          */
 /* ============================================================ */
 
-@keyframes circle-outer {
+#wifi-loader {
+  --background: #ffffff;
+  --front-color: #ff758c;
+  --back-color: rgba(255, 255, 255, 0.12);
+  --text-color: #a1a1aa;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#wifi-loader svg {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#wifi-loader svg circle {
+  position: absolute;
+  fill: none;
+  stroke-width: 6px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: rotate(-100deg);
+  transform-origin: center;
+}
+
+#wifi-loader svg.circle-outer {
+  height: 86px;
+  width: 86px;
+}
+
+#wifi-loader svg.circle-outer circle {
+  stroke-dasharray: 62.75 188.25;
+}
+
+#wifi-loader svg.circle-outer circle.back {
+  stroke: var(--back-color);
+  animation: circle-outer135 1.8s ease infinite 0.3s;
+}
+
+#wifi-loader svg.circle-outer circle.front {
+  stroke: var(--front-color);
+  animation: circle-outer135 1.8s ease infinite 0.15s;
+}
+
+#wifi-loader svg.circle-outer circle.new {
+  stroke: var(--background);
+  animation: circle-outer135 1.8s ease infinite 0s;
+}
+
+#wifi-loader svg.circle-middle {
+  height: 60px;
+  width: 60px;
+}
+
+#wifi-loader svg.circle-middle circle {
+  stroke-dasharray: 42.5 127.5;
+}
+
+#wifi-loader svg.circle-middle circle.back {
+  stroke: var(--back-color);
+  animation: circle-middle6123 1.8s ease infinite 0.25s;
+}
+
+#wifi-loader svg.circle-middle circle.front {
+  stroke: var(--front-color);
+  animation: circle-middle6123 1.8s ease infinite 0.1s;
+}
+
+#wifi-loader svg.circle-inner {
+  height: 34px;
+  width: 34px;
+}
+
+#wifi-loader svg.circle-inner circle {
+  stroke-dasharray: 22 66;
+}
+
+#wifi-loader svg.circle-inner circle.back {
+  stroke: var(--back-color);
+  animation: circle-inner162 1.8s ease infinite 0.2s;
+}
+
+#wifi-loader svg.circle-inner circle.front {
+  stroke: var(--front-color);
+  animation: circle-inner162 1.8s ease infinite 0.05s;
+}
+
+#wifi-loader .text {
+  position: absolute;
+  bottom: -40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-transform: lowercase;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+#wifi-loader .text::before,
+#wifi-loader .text::after {
+  content: attr(data-text);
+}
+
+#wifi-loader .text::before {
+  color: var(--text-color);
+}
+
+#wifi-loader .text::after {
+  color: var(--front-color);
+  animation: text-animation76 3.6s ease infinite;
+  position: absolute;
+  left: 0;
+}
+
+@keyframes circle-outer135 {
   0% {
-    stroke-dashoffset: 70;
-    transform: rotate(0deg);
+    stroke-dashoffset: 25;
   }
-  50% {
+  25% {
     stroke-dashoffset: 0;
-    transform: rotate(360deg);
+  }
+  65% {
+    stroke-dashoffset: 301;
+  }
+  80% {
+    stroke-dashoffset: 276;
   }
   100% {
-    stroke-dashoffset: 70;
-    transform: rotate(720deg);
+    stroke-dashoffset: 276;
   }
 }
 
-@keyframes circle-middle {
+@keyframes circle-middle6123 {
   0% {
-    stroke-dashoffset: 55;
-    transform: rotate(0deg);
+    stroke-dashoffset: 17;
   }
-  50% {
+  25% {
     stroke-dashoffset: 0;
-    transform: rotate(360deg);
+  }
+  65% {
+    stroke-dashoffset: 204;
+  }
+  80% {
+    stroke-dashoffset: 187;
   }
   100% {
-    stroke-dashoffset: 55;
-    transform: rotate(720deg);
+    stroke-dashoffset: 187;
   }
 }
 
-@keyframes circle-inner {
+@keyframes circle-inner162 {
   0% {
-    stroke-dashoffset: 40;
-    transform: rotate(0deg);
+    stroke-dashoffset: 9;
   }
-  50% {
+  25% {
     stroke-dashoffset: 0;
-    transform: rotate(360deg);
+  }
+  65% {
+    stroke-dashoffset: 106;
+  }
+  80% {
+    stroke-dashoffset: 97;
   }
   100% {
-    stroke-dashoffset: 40;
-    transform: rotate(720deg);
+    stroke-dashoffset: 97;
   }
 }
 
-@keyframes float-blob-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(6px, -8px) scale(1.15); }
-  66% { transform: translate(-6px, 5px) scale(0.9); }
+@keyframes text-animation76 {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  50% {
+    clip-path: inset(0);
+  }
+  100% {
+    clip-path: inset(0 0 0 100%);
+  }
 }
 
-@keyframes float-blob-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-7px, 6px) scale(0.85); }
-  66% { transform: translate(7px, -5px) scale(1.2); }
-}
-
-@keyframes float-blob-3 {
-  0%, 100% { transform: translate(0, 0) scale(0.9); }
-  50% { transform: translate(5px, 7px) scale(1.1); }
-}
-
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
-}
 

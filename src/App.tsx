@@ -618,12 +618,12 @@ export function App() {
         onTouchEnd={handleTouchEnd}
       >
         {loading && !data ? (
-          /* Fusion Loader (young-walrus-64 + pink-deer-76) */
+          /* Exact Pink-Deer-76 Loader */
           <div className="flex flex-col items-center justify-center min-h-[65vh]">
             <LiquidRadarLoader
               size="lg"
-              title="Загрузка вишлиста"
-              subtitle="Синхронизация с сервером..."
+              text="загрузка..."
+              subtext="Синхронизация с сервером..."
             />
           </div>
         ) : (

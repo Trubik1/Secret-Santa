@@ -209,13 +209,13 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
               </button>
             </div>
 
-            {/* Fusion Loading Animation (Young Walrus + Pink Deer) */}
+            {/* Exact Pink-Deer-76 Loading Animation */}
             {isParsing && (
-              <div className="mt-3 p-3 rounded-2xl bg-zinc-900/90 border border-[#c4457b]/30 shadow-[0_8px_32px_0_rgba(196,69,123,0.15)] backdrop-blur-xl animate-apple-spring">
+              <div className="mt-3 p-3 rounded-2xl bg-zinc-900/90 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] backdrop-blur-xl animate-apple-spring">
                 <LiquidRadarLoader
                   size="sm"
-                  title="Поиск товара по ссылке"
-                  subtitle="Это может занять немного времени"
+                  text="поиск товара"
+                  subtext="Это может занять немного времени"
                 />
               </div>
             )}
