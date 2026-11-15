@@ -3,10 +3,6 @@ import { Gift, WishlistData, DeleteReason, UserProfile } from './types'
 import { useTelegram } from './hooks/useTelegram'
 import {
   serverlessCall,
-  isTelegramServerlessAvailable,
-  getMockIsOwner,
-  setMockIsOwner,
-  resetMockData,
 } from './api/serverless'
 import { parseWildberriesClient } from './api/clientParser'
 import { CurrencyMode } from './utils/currency'
@@ -22,7 +18,6 @@ import { SettingsPage } from './components/SettingsPage'
 import { BottomNavDock, NavTabType } from './components/BottomNavDock'
 import { FriendsWishlistPage } from './components/FriendsWishlistPage'
 import { SecretSantaPage } from './components/SecretSantaPage'
-import { DevToolsBar } from './components/DevToolsBar'
 import { CoverCropModal } from './components/CoverCropModal'
 import { PremiumModal } from './components/PremiumModal'
 import { CustomizationModal } from './components/CustomizationModal'
@@ -61,7 +56,6 @@ export function App() {
   const {
     user,
     startParam,
-    isInsideTelegram,
     haptics,
     openTelegramLink,
     openLink,
@@ -182,14 +176,14 @@ export function App() {
     }
   }, [isViewingFriend, viewingFriendId, data])
 
-  // Single Currency Preference (defaults to 'byn')
+  // Single Currency Preference (defaults to 'usd')
   const [currencyMode, setCurrencyMode] = useState<CurrencyMode>(() => {
     try {
       const saved = localStorage.getItem('wishlist_curr') as CurrencyMode
       if (saved && saved !== ('both' as any)) return saved
-      return 'byn'
+      return 'usd'
     } catch (_) {
-      return 'byn'
+      return 'usd'
     }
   })
 
@@ -475,19 +469,6 @@ export function App() {
     setIsShareModalOpen(true)
   }
 
-  // Dev bar handlers
-  const handleToggleOwner = () => {
-    const cur = getMockIsOwner()
-    setMockIsOwner(!cur)
-    loadWishlist()
-  }
-
-  const handleResetData = () => {
-    resetMockData()
-    loadWishlist()
-    showToast('Данные сброшены к начальным')
-  }
-
   const handleSelectGiftFromHelper = (gift: Gift) => {
     setSelectedGiftDetail(gift)
   }
@@ -601,15 +582,6 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-white flex flex-col font-sans selection:bg-zinc-800 selection:text-white overflow-x-hidden safe-top">
-      {/* Dev Tools Bar in standalone browser only */}
-      {!isTelegramServerlessAvailable() && !isInsideTelegram && (
-        <DevToolsBar
-          isOwner={isEffectiveOwner}
-          onToggleOwner={handleToggleOwner}
-          onResetData={handleResetData}
-        />
-      )}
-
       {/* Main Content Area: Responsive Widescreen Desktop & Smartphone */}
       <main
         className="flex-1 w-full max-w-md sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pb-28 px-3 sm:px-6 transition-all duration-300 overflow-x-hidden"

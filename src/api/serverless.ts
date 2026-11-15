@@ -20,7 +20,13 @@ export function isTelegramServerlessAvailable(): boolean {
 export function getMockProfile(): UserProfile {
   try {
     const raw = localStorage.getItem(MOCK_STORAGE_KEY_PROFILE)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (!parsed.coverUrl && INITIAL_MOCK_PROFILE.coverUrl) {
+        parsed.coverUrl = INITIAL_MOCK_PROFILE.coverUrl
+      }
+      return parsed
+    }
   } catch (_) {}
   return { ...INITIAL_MOCK_PROFILE }
 }

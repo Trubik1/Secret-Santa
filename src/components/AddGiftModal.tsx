@@ -85,7 +85,10 @@ export const AddGiftModal: React.FC<AddGiftModalProps> = ({
     setFormError(null)
     onHaptic()
     try {
-      const res = await onParseUrl(url.trim())
+      const [res] = await Promise.all([
+        onParseUrl(url.trim()),
+        new Promise((resolve) => setTimeout(resolve, 1200)),
+      ])
       if (res && res.parsed && (res.title || res.price || res.imageUrl)) {
         if (res.title) setTitle(res.title)
         if (res.price) {

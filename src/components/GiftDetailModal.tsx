@@ -76,6 +76,14 @@ export const GiftDetailModal: React.FC<GiftDetailModalProps> = ({
     }, 280)
   }, [onClose])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleDismiss()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleDismiss])
+
   // Drag down to dismiss touch handlers
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY

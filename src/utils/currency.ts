@@ -65,14 +65,14 @@ export const ALL_CURRENCIES: CurrencyOption[] = [
   },
 ]
 
-export function getCurrencySymbol(mode: CurrencyMode = 'byn'): string {
+export function getCurrencySymbol(mode: CurrencyMode = 'usd'): string {
   switch (mode) {
+    case 'usd': return '$'
     case 'byn': return 'Br'
     case 'rub': return '₽'
-    case 'usd': return '$'
     case 'eur': return '€'
     case 'kzt': return '₸'
-    default: return 'Br'
+    default: return '$'
   }
 }
 
@@ -102,7 +102,7 @@ export function convertToRub(amount: number, source: CurrencyMode): number {
 /**
  * Formats price in Target Currency (strictly single currency, no secondary brackets)
  */
-export function formatPrice(amountInRub: number, mode: CurrencyMode = 'byn'): string {
+export function formatPrice(amountInRub: number, mode: CurrencyMode = 'usd'): string {
   if (!amountInRub || amountInRub <= 0) {
     return 'Без цены'
   }
@@ -143,7 +143,7 @@ export function formatPrice(amountInRub: number, mode: CurrencyMode = 'byn'): st
  */
 export function formatDualPrice(
   rub: number,
-  mode: CurrencyMode = 'byn'
+  mode: CurrencyMode = 'usd'
 ): {
   primary: string
   secondary?: string
