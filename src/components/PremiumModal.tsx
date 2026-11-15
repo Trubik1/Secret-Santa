@@ -61,7 +61,7 @@ export const PremiumModal: React.FC<PremiumModalProps> = ({
     onHaptic?.()
 
     await payWithTelegramStars({
-      amount: 50,
+      amount: 150,
       title: 'Giftly PRO ⭐️',
       description: 'Безлимит желаний, своя обложка и PRO статус навсегда',
       onSuccess: () => {
@@ -252,7 +252,7 @@ export const PremiumModal: React.FC<PremiumModalProps> = ({
                 ) : (
                   <>
                     <TelegramStarIcon size={20} />
-                    <span>Активировать за 50 ⭐</span>
+                    <span>Активировать за 150 ⭐</span>
                   </>
                 )}
               </button>

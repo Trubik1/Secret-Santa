@@ -907,7 +907,7 @@ export function App() {
         onHaptic={() => haptics.impact('light')}
       />
 
-      {/* Giftly Premium Modal (50 Stars) */}
+      {/* Giftly Premium Modal (150 Stars) */}
       <PremiumModal
         isOpen={isPremiumModalOpen}
         reason={premiumReason}

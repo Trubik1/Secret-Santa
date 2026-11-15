@@ -239,7 +239,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               <div className="flex items-center gap-2">
                 <span className="text-xs sm:text-sm font-black text-white tracking-tight">Giftly PRO</span>
                 <span className="px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-300 text-[10px] font-black border border-amber-400/25">
-                  50 ⭐
+                  150 ⭐
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
