@@ -373,8 +373,24 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
       return { ok: true, invoiceLink: `https://t.me/$mock_star_${Date.now()}` } as unknown as T
     }
 
+    case 'adminSetPremium': {
+      const targetUserId = Number(input?.targetUserId)
+      const isPremium = Boolean(input?.isPremium)
+      if (profile.id === targetUserId) {
+        profile.isPremium = isPremium
+        saveMockProfile(profile)
+      }
+      try {
+        const mockUsersOverride = JSON.parse(localStorage.getItem('wishlist_mock_users_premium') || '{}')
+        mockUsersOverride[targetUserId] = isPremium
+        localStorage.setItem('wishlist_mock_users_premium', JSON.stringify(mockUsersOverride))
+      } catch (_) {}
+      return { success: true, targetUserId, isPremium } as unknown as T
+    }
+
     case 'getAdminStats': {
       const mockEvents = JSON.parse(localStorage.getItem('wishlist_mock_events') || '[]')
+      const mockUsersOverride = JSON.parse(localStorage.getItem('wishlist_mock_users_premium') || '{}')
       const totalGiftsCount = giftsList.length
       const totalGiftsValue = giftsList.reduce((sum, g) => sum + (g.price || 0), 0)
       const avgPrice = totalGiftsCount > 0 ? Math.round(totalGiftsValue / totalGiftsCount) : 0
@@ -391,7 +407,7 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
           id: profile.id,
           name: profile.firstName,
           username: profile.username || 'trubik1',
-          isPremium: Boolean(profile.isPremium),
+          isPremium: mockUsersOverride[profile.id] !== undefined ? Boolean(mockUsersOverride[profile.id]) : Boolean(profile.isPremium),
           createdAt: '2026-11-10T19:02:04Z',
           giftsCount: giftsList.length,
         },
@@ -399,7 +415,7 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
           id: 168843437,
           name: 'Анна Шварц',
           username: 'Shwarc_Anna',
-          isPremium: false,
+          isPremium: mockUsersOverride[168843437] !== undefined ? Boolean(mockUsersOverride[168843437]) : false,
           createdAt: '2026-11-11T05:27:27Z',
           giftsCount: 0,
         },
@@ -407,7 +423,7 @@ export async function serverlessCall<T = any>(endpoint: string, input: any = {})
           id: 8989626146,
           name: 'Соня',
           username: 'Loopsai',
-          isPremium: false,
+          isPremium: mockUsersOverride[8989626146] !== undefined ? Boolean(mockUsersOverride[8989626146]) : false,
           createdAt: '2026-11-12T05:41:26Z',
           giftsCount: 0,
         },

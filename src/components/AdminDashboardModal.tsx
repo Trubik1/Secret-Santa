@@ -16,6 +16,7 @@ import {
   Calendar,
   Search,
   ExternalLink,
+  Loader2,
 } from 'lucide-react'
 import { TelegramStarIcon } from './PremiumModal'
 
@@ -45,6 +46,91 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
   const [timeframe, setTimeframe] = useState<TimeframeType>('30d')
   const [userFilter, setUserFilter] = useState<UserFilterType>('all')
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Individual PRO grant/revoke state
+  const [updatingUserId, setUpdatingUserId] = useState<number | null>(null)
+  const [customIdInput, setCustomIdInput] = useState('')
+  const [isCustomUpdating, setIsCustomUpdating] = useState(false)
+
+  const handleTogglePremium = async (targetUser: { id: number; name: string; username: string | null; isPremium: boolean }, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    if (updatingUserId) return
+    const newStatus = !targetUser.isPremium
+    setUpdatingUserId(targetUser.id)
+    onHaptic?.()
+
+    try {
+      await serverlessCall('adminSetPremium', {
+        targetUserId: targetUser.id,
+        isPremium: newStatus,
+        firstName: targetUser.name,
+        username: targetUser.username,
+      })
+
+      // Optimistic update in state
+      setStats((prev) => {
+        if (!prev) return prev
+        const updateUserList = (list: any[]) =>
+          list.map((u) => (u.id === targetUser.id ? { ...u, isPremium: newStatus } : u))
+
+        const newAll = prev.users.all ? updateUserList(prev.users.all) : undefined
+        const newRecent = updateUserList(prev.users.recent)
+        const premiumDiff = newStatus ? 1 : -1
+
+        return {
+          ...prev,
+          users: {
+            ...prev.users,
+            premium: Math.max(0, prev.users.premium + premiumDiff),
+            recent: newRecent,
+            all: newAll,
+          },
+        }
+      })
+
+      onShowToast(
+        newStatus
+          ? `⭐ PRO статус выдан: ${targetUser.name}`
+          : `✕ PRO статус отозван: ${targetUser.name}`
+      )
+    } catch (err: any) {
+      console.error('Failed to toggle premium:', err)
+      onShowToast(err.message || 'Ошибка изменения статуса')
+    } finally {
+      setUpdatingUserId(null)
+    }
+  }
+
+  const handleCustomIdSubmit = async (givePro: boolean) => {
+    const rawId = customIdInput.trim()
+    const targetId = Number(rawId)
+    if (!targetId || isNaN(targetId)) {
+      onShowToast('Введите числовой Telegram ID')
+      return
+    }
+
+    setIsCustomUpdating(true)
+    onHaptic?.()
+    try {
+      await serverlessCall('adminSetPremium', {
+        targetUserId: targetId,
+        isPremium: givePro,
+      })
+
+      fetchStats()
+      setCustomIdInput('')
+      onShowToast(
+        givePro
+          ? `⭐ PRO выдан пользователю [ID: ${targetId}]`
+          : `✕ PRO отозван у пользователя [ID: ${targetId}]`
+      )
+    } catch (err: any) {
+      console.error('Failed to set premium by ID:', err)
+      onShowToast(err.message || 'Ошибка изменения статуса')
+    } finally {
+      setIsCustomUpdating(false)
+    }
+  }
 
   const usersSectionRef = useRef<HTMLDivElement>(null)
 
@@ -421,6 +507,40 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                 </div>
               </div>
 
+              {/* Quick ID Grant/Revoke Tool */}
+              <div className="p-3 mb-3 rounded-xl bg-zinc-900/90 border border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-300 mb-1">
+                    <Sparkles size={11} />
+                    <span>Быстрое управление PRO по ID</span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Введите Telegram ID (напр. 1211235294)..."
+                    value={customIdInput}
+                    onChange={(e) => setCustomIdInput(e.target.value)}
+                    className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-amber-400/50 transition-colors"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-end">
+                  <button
+                    disabled={isCustomUpdating || !customIdInput.trim()}
+                    onClick={() => handleCustomIdSubmit(true)}
+                    className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-black text-[11px] font-black flex items-center gap-1 transition-all active:scale-95 shadow-sm cursor-pointer"
+                  >
+                    {isCustomUpdating ? <Loader2 size={11} className="animate-spin text-black" /> : <TelegramStarIcon size={11} />}
+                    <span>Выдать PRO</span>
+                  </button>
+                  <button
+                    disabled={isCustomUpdating || !customIdInput.trim()}
+                    onClick={() => handleCustomIdSubmit(false)}
+                    className="px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-zinc-300 hover:text-white text-[11px] font-bold border border-white/5 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <span>Забрать</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Search Bar for Users */}
               <div className="relative mb-2.5">
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
@@ -486,9 +606,42 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                         </div>
                       </div>
 
-                      <div className="text-[10px] text-zinc-500 shrink-0 flex items-center gap-1">
-                        <Calendar size={10} />
-                        <span>{u.createdAt ? u.createdAt.slice(0, 10) : '—'}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="text-[10px] text-zinc-500 hidden sm:flex items-center gap-1">
+                          <Calendar size={10} />
+                          <span>{u.createdAt ? u.createdAt.slice(0, 10) : '—'}</span>
+                        </div>
+
+                        {u.isPremium ? (
+                          <button
+                            disabled={updatingUserId === u.id}
+                            onClick={(e) => handleTogglePremium(u, e)}
+                            className="px-2.5 py-1 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-500/30 hover:border-red-500/50 text-red-300 text-[10px] font-bold transition-all active:scale-95 flex items-center gap-1 cursor-pointer disabled:opacity-40 shadow-sm"
+                            title="Отозвать PRO статус"
+                          >
+                            {updatingUserId === u.id ? (
+                              <Loader2 size={10} className="animate-spin" />
+                            ) : (
+                              <span>✕ Забрать</span>
+                            )}
+                          </button>
+                        ) : (
+                          <button
+                            disabled={updatingUserId === u.id}
+                            onClick={(e) => handleTogglePremium(u, e)}
+                            className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-black text-[10px] font-black transition-all active:scale-95 flex items-center gap-1 cursor-pointer disabled:opacity-40 shadow-sm"
+                            title="Выдать PRO статус"
+                          >
+                            {updatingUserId === u.id ? (
+                              <Loader2 size={10} className="animate-spin text-black" />
+                            ) : (
+                              <>
+                                <TelegramStarIcon size={10} />
+                                <span>Выдать PRO</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))

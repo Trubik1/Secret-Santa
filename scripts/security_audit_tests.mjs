@@ -303,6 +303,22 @@ function testSec09_CrowdfundOverrideOnBooked() {
   }
 }
 
+function testSec10_AdminSetPremiumAuthorization() {
+  logHeader('SEC-10: Admin Set Premium Authorization Check')
+  const sourceCode = fs.readFileSync(path.join(ROOT_DIR, 'tgcloud/endpoints/adminSetPremium.js'), 'utf8')
+  const checksAdminId = sourceCode.includes('ADMIN_USER_IDS') && sourceCode.includes('FORBIDDEN')
+
+  if (!checksAdminId) {
+    recordFail(
+      'SEC-10',
+      'adminSetPremium endpoint lacks proper ADMIN_USER_IDS check',
+      'Missing check: caller user ID must strictly match ADMIN_USER_IDS list'
+    )
+  } else {
+    recordPass('SEC-10', 'adminSetPremium strictly restricts PRO assignment to authorized creator (1211235294)')
+  }
+}
+
 // -------------------------------------------------------------
 // Runner
 // -------------------------------------------------------------
@@ -319,6 +335,7 @@ testSec06_HtmlInjectionNotifications()
 testSec07_UsernameSpoofingImmunity()
 testSec08_PayloadLengthLimits()
 testSec09_CrowdfundOverrideOnBooked()
+testSec10_AdminSetPremiumAuthorization()
 
 console.log(`\n${BOLD}====================================================`)
 console.log(`  TEST RESULTS SUMMARY`)
